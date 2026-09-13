@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Yoru
+Comment=Личный VPN-клиент
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/Yoru %u
+Terminal=false
+Type=Application
+Icon=Yoru
+Categories=Utility;
+StartupWMClass=Yoru

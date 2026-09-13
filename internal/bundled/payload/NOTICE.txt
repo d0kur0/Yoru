@@ -1,0 +1,4 @@
+Mihomo core: https://github.com/MetaCubeX/mihomo
+Bundled release: v1.19.30
+Source for this release: https://github.com/MetaCubeX/mihomo/tree/v1.19.30
+License: GPL-3.0. The release license is included with the prepared payload.

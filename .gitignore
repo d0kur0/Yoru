@@ -1,0 +1,39 @@
+.task
+bin
+**/obj/
+**/bin/
+native/macos/.build/
+frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+# Mobile generated (per-machine; overlays hold absolute paths)
+build/ios/xcode/overlay.json
+build/ios/xcode/gen/
+build/android/overlay.json
+build/android/gen/
+
+internal/bundled/payload/*.gz
+internal/bundled/payload/*.json
+
+# Local references, abandoned native prototypes and design notes
+/design/
+/native/
+/PRODUCT.md
+/DESIGN.md
+/build/appicon.icon/
+/build/darwin/Assets.car
+# Local data, diagnostic exports and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+*.zip
+/runtime/
+/config.json
+/proxy-recovery.json
+.DS_Store
+*.syso

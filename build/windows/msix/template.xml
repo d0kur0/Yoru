@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MsixPackagingToolTemplate
+    xmlns="http://schemas.microsoft.com/msix/packaging/msixpackagingtool/template/2022">
+    <Settings
+        AllowTelemetry="false"
+        ApplyACLsToPackageFiles="true"
+        GenerateCommandLineFile="true"
+        AllowPromptForPassword="false">
+    </Settings>
+    <Installer
+        Path="Yoru.exe"
+        Arguments=""
+        InstallLocation="C:\Program Files\d0kur0\Yoru">
+    </Installer>
+    <PackageInformation
+        PackageName="Yoru"
+        PackageDisplayName="Yoru"
+        PublisherName="CN=d0kur0"
+        PublisherDisplayName="d0kur0"
+        Version="0.1.0.0"
+        PackageDescription="Личный VPN-клиент">
+        <Capabilities>
+            <Capability Name="runFullTrust" />
+
+        </Capabilities>
+        <Applications>
+            <Application
+                Id="io.github.d0kur0.yoru"
+                Description="Личный VPN-клиент"
+                DisplayName="Yoru"
+                ExecutableName="Yoru.exe"
+                EntryPoint="Windows.FullTrustApplication">
+
+            </Application>
+        </Applications>
+        <Resources>
+            <Resource Language="en-us" />
+        </Resources>
+        <Dependencies>
+            <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+        </Dependencies>
+        <Properties>
+            <Framework>false</Framework>
+            <DisplayName>Yoru</DisplayName>
+            <PublisherDisplayName>d0kur0</PublisherDisplayName>
+            <Description>Личный VPN-клиент</Description>
+            <Logo>Assets\AppIcon.png</Logo>
+        </Properties>
+    </PackageInformation>
+    <SaveLocation PackagePath="Yoru.msix" />
+    <PackageIntegrity>
+        <CertificatePath></CertificatePath>
+    </PackageIntegrity>
+</MsixPackagingToolTemplate>
