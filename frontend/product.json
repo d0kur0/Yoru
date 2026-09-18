@@ -1,1 +1,6 @@
-{"name": "Yoru", "mark": "Y", "version": "0.1.0", "icon": "/yoru-64.png"}
+{
+  "name": "Yoru",
+  "mark": "Y",
+  "version": "1.0.0",
+  "icon": "/yoru-64.png"
+}
