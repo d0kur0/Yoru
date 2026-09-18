@@ -72,7 +72,7 @@ body.operation-busy main input, body.operation-busy main select, body.operation-
 .rules-network .native-settings{min-width:0}
 .rules-network .tun-exclusions{padding-bottom:16px}
 .rules-workspace .route-sets{margin-bottom:26px}
-.rules-workspace .route-set-row>div:first-child{flex:0 0 auto;min-width:0}
+.rules-workspace .route-sets .route-set-row>div:first-child{flex:0 0 auto;min-width:0}
 .route-set-description{flex:1;min-width:180px}
 .route-set-row.inactive .route-set-description{opacity:.6}
 .route-set-row .table-actions{gap:14px}
@@ -88,7 +88,6 @@ body.operation-busy main input, body.operation-busy main select, body.operation-
 .rules-network .tun-exclusions{padding:0 0 16px;gap:8px}
 .tun-exclusions code{font-family:inherit;font-size:13px;font-weight:500;line-height:1.4;font-variant-numeric:tabular-nums;letter-spacing:0;background:color-mix(in srgb,var(--text) 4%,transparent);border:1px solid var(--line);color:var(--text)}
 
-.dns-mode-help{padding:0 0 18px;display:grid;gap:10px;font-size:12px;color:var(--muted);line-height:1.6}.dns-mode-help strong{color:var(--text);font-weight:600}.dns-mode-help .dns-mode-tip{border-left:2px solid color-mix(in srgb,var(--accent) 40%,transparent);padding-left:12px;margin-top:2px}
 
 .connections-table .rule-action{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:7px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);white-space:nowrap}
 .connections-table .rule-action::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
@@ -170,7 +169,7 @@ dialog:has(.dns-editor-wide){width:min(980px,calc(100vw - 40px));max-width:calc(
 @media(max-width:700px){.dns-editor-grid{grid-template-columns:1fr}}
 
 /* Modal overlays begin below the desktop titlebar. */
-:root{--app-titlebar-bottom:70px}
+:root{--app-titlebar-bottom:48px}
 dialog:not(.select-menu){top:calc(var(--app-titlebar-bottom) + 12px);bottom:12px;margin:auto;max-height:calc(100dvh - var(--app-titlebar-bottom) - 24px)}
 dialog::backdrop{top:var(--app-titlebar-bottom);backdrop-filter:none;background:#0809108c}
 .process-picker-dialog::backdrop{top:var(--app-titlebar-bottom);background:#08091099;backdrop-filter:none}
@@ -356,3 +355,67 @@ main[data-page=connections]{padding-top:22px}
 
 .titlebar .brandmark,.brandmark:has(img){width:32px;height:32px;padding:0;background:none;letter-spacing:normal;display:inline-flex}
 .brandmark img{display:block;width:32px;height:32px;object-fit:contain}
+
+/* Keep control density and scrolling geometry consistent across pages. */
+.button.compact-add,.rules-workspace .button.compact-add{height:32px;min-height:32px;padding:0 12px;font-size:12px;line-height:1.2;border-radius:7px}
+.page-actions>.button{min-height:32px;padding-top:7px;padding-bottom:7px}
+#main,dialog:not(.select-menu),.process-picker-list,.log-content,.table-scroll,.list-values{scrollbar-gutter:stable}
+.dns-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:24px;width:100%;min-width:0}
+.dns-column{min-width:0}
+.dns-column>.group-label{margin:0 0 12px;font-size:13px;font-weight:500;line-height:1.5}
+.dns-column .native-settings{padding:0 18px}
+.dns-column .setting-row{min-height:78px;gap:16px;padding:17px 0}
+.dns-column .setting-row>div:first-child{min-width:0}
+.dns-column .setting-row strong{font-size:13px;font-weight:500}
+.dns-column .setting-row p{font-size:12px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dns-column .setting-row>.button,.dns-column .setting-row>.switch{flex-shrink:0}
+.dns-column .setting-row>.button{font-size:12px;padding:6px 0 6px 8px}
+.dns-column .dns-resolution{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.dns-resolution-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dns-resolution-heading .text-link{font-size:11px;white-space:nowrap}
+.dns-resolution .route-select,.dns-resolution .custom-select{width:100%;max-width:none}
+.dns-resolution .select-trigger{width:100%;font-size:13px;min-height:36px}
+@media(max-width:1000px){.dns-workspace{grid-template-columns:minmax(0,1fr);gap:22px}}
+
+/* Compact window chrome, with room left for dragging the window. */
+.titlebar,html[data-platform=mac] .titlebar{min-height:48px;height:48px;gap:16px;padding:0 8px 0 16px}
+.titlebar .brandmark,.titlebar .brandmark img{width:26px;height:26px}
+.titlebar nav,html[data-platform=mac] .titlebar nav{gap:3px}
+.titlebar .nav-item,html[data-platform=mac] .titlebar .nav-item{height:32px;padding:0 10px;font-size:12px;gap:6px}
+html[data-platform=windows] .window-button{height:30px;width:32px}
+@media(max-width:900px){.titlebar,html[data-platform=mac] .titlebar{gap:10px;padding-left:12px}.titlebar .nav-item,html[data-platform=mac] .titlebar .nav-item{padding:0 8px}}
+@media(max-width:650px){.titlebar,html[data-platform=mac] .titlebar{height:auto;min-height:78px}.titlebar nav,html[data-platform=mac] .titlebar nav{padding-bottom:6px}.titlebar .brand{height:40px}}
+
+/* WebKit fallback: standard scrollbar properties otherwise override these parts. */
+@supports selector(::-webkit-scrollbar){
+ *{scrollbar-width:auto;scrollbar-color:auto}
+ html[data-platform=mac] *{scrollbar-color:auto}
+ ::-webkit-scrollbar{width:8px;height:8px}
+ ::-webkit-scrollbar-button{display:none;width:0;height:0}
+ ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+ ::-webkit-scrollbar-thumb{background-color:#5e5e6d;border:2px solid transparent;border-radius:8px;background-clip:padding-box}
+}
+/* Overlay handles never take up layout space. Native fallback still reserves its gutter. */
+.os-theme-yoru{--os-size:10px;--os-padding-perpendicular:3px;--os-padding-axis:4px;--os-handle-border-radius:10px;--os-handle-bg:#69697999;--os-handle-bg-hover:#858596cc;--os-handle-bg-active:#9999aacd;--os-handle-min-size:32px;--os-track-bg:transparent;--os-track-bg-hover:transparent;--os-track-bg-active:transparent}
+.app>.os-scrollbar-vertical{top:var(--app-titlebar-bottom)!important;bottom:0;height:auto!important}
+#main[data-overlayscrollbars-viewport],dialog[data-overlayscrollbars],.process-picker-list[data-overlayscrollbars],.log-content[data-overlayscrollbars],.table-scroll[data-overlayscrollbars],.list-values[data-overlayscrollbars]{scrollbar-gutter:auto}
+@media(prefers-reduced-motion:reduce){.os-scrollbar{transition:none!important}}
+@media(forced-colors:active){.os-theme-yoru{--os-handle-bg:CanvasText;--os-handle-bg-hover:Highlight;--os-handle-bg-active:Highlight}}
+
+/* Every result state occupies the same line, including the loading placeholder. */
+[data-server-latency]{display:flex;align-items:center;min-width:96px;height:20px;line-height:20px;white-space:nowrap}
+.latency-skeleton{display:block;position:relative;overflow:hidden;width:56px;height:12px;flex:none;border-radius:4px;background:color-mix(in srgb,var(--muted) 15%,transparent)}
+.latency-skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 18%,transparent),transparent);transform:translateX(-100%);animation:latency-shimmer 1.4s ease-in-out infinite}
+@keyframes latency-shimmer{to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.latency-skeleton::after{animation:none;transform:none}}
+.latency-refresh{min-width:178px;justify-content:center}
+
+.route-set-actions{justify-content:flex-end}
+dialog:has(.route-set-import){width:min(900px,calc(100vw - 40px));max-width:calc(100vw - 40px)}
+.route-set-import{display:grid;gap:12px}
+.route-set-preview{padding:16px;border:1px solid var(--line);border-radius:10px}
+.route-set-preview-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.route-set-preview-heading strong{font-size:14px}.route-set-preview-heading span,.route-set-preview p{font-size:12px;color:var(--muted)}
+.route-set-preview dl{margin:12px 0;display:grid;gap:8px;font-size:13px;line-height:1.5}
+.route-set-preview dl>div{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px}
+.route-set-preview dt{color:var(--muted)}.route-set-preview dd{margin:0;font-weight:400;overflow-wrap:anywhere}

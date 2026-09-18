@@ -10,10 +10,11 @@ import (
 )
 
 type RouteSet struct {
-	ID        string   `json:"id"`
+	ID        string   `json:"id,omitempty"`
 	Name      string   `json:"name"`
 	Enabled   bool     `json:"enabled"`
 	Domains   []string `json:"domains"`
+	Keywords  []string `json:"keywords,omitempty"`
 	Processes []string `json:"processes"`
 	CIDRs     []string `json:"cidrs"`
 	Action    string   `json:"action"`
@@ -88,6 +89,11 @@ func (c Config) validateExtensions() error {
 				claimed[domain] = s.Resolvers
 			}
 		}
+		for _, keyword := range s.Keywords {
+			if keyword == "" || !clean(keyword) || strings.ContainsAny(keyword, " /:\t\r\n") {
+				return errors.New("Часть домена: укажите текст без протокола, пробелов и пути")
+			}
+		}
 		for _, p := range s.Processes {
 			if p == "" || !clean(p) {
 				return errors.New("Некорректное имя процесса")
@@ -153,6 +159,9 @@ func (c Config) expanded() Config {
 			if s.RealIP {
 				c.DNS.Exclusions = appendUnique(c.DNS.Exclusions, d)
 			}
+		}
+		for _, keyword := range s.Keywords {
+			generated = append(generated, Rule{Type: "DOMAIN-KEYWORD", Value: keyword, Action: s.Action})
 		}
 		for _, p := range s.Processes {
 			typ := "PROCESS-NAME"

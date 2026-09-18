@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -22,6 +21,7 @@ type Manager struct {
 	lifetime         context.Context
 	cancel           context.CancelFunc
 	mu               sync.Mutex
+	probeMu          sync.Mutex
 	dir              string
 	config           Config
 	runner           Runner
@@ -319,18 +319,21 @@ func (m *Manager) api(ctx context.Context, method, path string, body, result any
 	return m.apiWithClient(ctx, m.client, method, path, body, result)
 }
 func (m *Manager) apiWithClient(ctx context.Context, client *http.Client, method, path string, body, result any) error {
-	if m.endpoint == "" {
+	return controllerAPI(ctx, client, m.endpoint, m.secret, method, path, body, result)
+}
+func controllerAPI(ctx context.Context, client *http.Client, endpoint, secret, method, path string, body, result any) error {
+	if endpoint == "" {
 		return errors.New("Ядро не запущено")
 	}
 	var data []byte
 	if body != nil {
 		data, _ = json.Marshal(body)
 	}
-	req, e := http.NewRequestWithContext(ctx, method, m.endpoint+path, bytes.NewReader(data))
+	req, e := http.NewRequestWithContext(ctx, method, endpoint+path, bytes.NewReader(data))
 	if e != nil {
 		return e
 	}
-	req.Header.Set("Authorization", "Bearer "+m.secret)
+	req.Header.Set("Authorization", "Bearer "+secret)
 	req.Header.Set("Content-Type", "application/json")
 	res, e := client.Do(req)
 	if e != nil {
@@ -463,77 +466,79 @@ func (m *Manager) nodeApplied(id string) bool {
 	return false
 }
 func (m *Manager) TestLatency(ctx context.Context) (map[string]int, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.process == nil {
-		return nil, errors.New("Для проверки задержки сначала подключитесь")
-	}
-	results := map[string]int{}
-	for _, s := range m.config.Servers {
-		if !m.nodeApplied(s.ID) {
-			results[s.ID] = -2
-			continue
+	c := m.Config()
+	results := make(map[string]int, len(c.Servers))
+	for _, s := range c.Servers {
+		delay, err := m.TestServerLatency(ctx, s.ID)
+		if err != nil {
+			return nil, err
 		}
-		var response struct {
-			Delay int `json:"delay"`
-		}
-		path := "/proxies/" + url.PathEscape(proxyName(s.ID)) + "/delay?timeout=" + strconv.Itoa(m.config.HealthTimeout()) + "&url=" + url.QueryEscape(m.config.LatencyTestURL())
-		if m.latencyAPI(ctx, path, &response) == nil {
-			results[s.ID] = response.Delay
-		} else {
-			results[s.ID] = -1
-		}
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+		results[s.ID] = delay
 	}
 	return results, nil
 }
 
-// TestServerLatency probes only the requested node, without scanning the subscription.
+// TestServerLatency measures saved settings without restarting the active VPN.
 func (m *Manager) TestServerLatency(ctx context.Context, id string) (int, error) {
 	return m.testServerLatency(ctx, id, false)
 }
 
-// Status measures the configuration actually loaded in the core, even with pending edits.
+// Status always measures the node actually loaded in the active core.
 func (m *Manager) TestRunningServerLatency(ctx context.Context, id string) (int, error) {
 	return m.testServerLatency(ctx, id, true)
 }
 func (m *Manager) testServerLatency(ctx context.Context, id string, running bool) (int, error) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	if m.process == nil {
+		m.mu.Unlock()
 		return 0, errors.New("Ядро не запущено")
 	}
+	timeout, target := m.config.HealthTimeout(), m.config.LatencyTestURL()
+	endpoint, secret, client := m.endpoint, m.secret, *m.client
 	if running {
 		var applied Config
-		if json.Unmarshal(m.applied, &applied) != nil {
-			return -2, nil
-		}
 		found := false
-		for _, s := range applied.Servers {
+		if json.Unmarshal(m.applied, &applied) == nil {
+			for _, s := range applied.Servers {
+				if s.ID == id {
+					found = true
+					break
+				}
+			}
+		}
+		m.mu.Unlock()
+		if !found {
+			return -1, errors.New("Сервер отсутствует в работающем ядре")
+		}
+	} else if !m.nodeApplied(id) {
+		var proxy map[string]any
+		var err error
+		for _, s := range m.config.Servers {
 			if s.ID == id {
-				found = true
+				proxy, err = s.Proxy()
 				break
 			}
 		}
-		if !found {
-			return -2, nil
+		if err != nil || proxy == nil {
+			m.mu.Unlock()
+			return -1, errors.New("Сервер недоступен для проверки")
 		}
-	} else if !m.nodeApplied(id) {
-		return -2, nil
+		installation, err := m.installed(true)
+		ipv6 := m.config.Settings.IPv6
+		m.mu.Unlock()
+		if err != nil {
+			return -1, err
+		}
+		return m.probeSavedServer(ctx, installation.Path, proxy, ipv6, timeout, target)
+	} else {
+		m.mu.Unlock()
 	}
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.config.HealthTimeout()+1000)*time.Millisecond)
+	ctx, cancel := m.operation(ctx, time.Duration(timeout+1000)*time.Millisecond)
 	defer cancel()
-	var response struct {
-		Delay int `json:"delay"`
-	}
-	path := "/proxies/" + url.PathEscape(proxyName(id)) + "/delay?timeout=" + strconv.Itoa(m.config.HealthTimeout()) + "&url=" + url.QueryEscape(m.config.LatencyTestURL())
-	if err := m.latencyAPI(ctx, path, &response); err != nil {
-		return -1, nil
-	}
-	return response.Delay, nil
+	client.Timeout = time.Duration(timeout+1000) * time.Millisecond
+	return probeDelay(ctx, &client, endpoint, secret, id, timeout, target)
 }
+
 func (m *Manager) CloseConnection(ctx context.Context, id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

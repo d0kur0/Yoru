@@ -30,12 +30,26 @@ export function ExportLogs(): $CancellablePromise<boolean> {
     return $Call.ByID(2705101069);
 }
 
+/**
+ * An empty id exports every routing set, preserving their order.
+ */
+export function ExportRouteSets(id: string): $CancellablePromise<boolean> {
+    return $Call.ByID(3044007522, id);
+}
+
 export function FetchSubscription(data: string): $CancellablePromise<string> {
     return $Call.ByID(3519107569, data);
 }
 
 export function ImportBackup(): $CancellablePromise<string> {
     return $Call.ByID(3273527047);
+}
+
+/**
+ * ImportRouteSets only reads the file; the UI previews it before SaveConfig.
+ */
+export function ImportRouteSets(): $CancellablePromise<string> {
+    return $Call.ByID(2815500263);
 }
 
 export function ImportYAML(): $CancellablePromise<string> {

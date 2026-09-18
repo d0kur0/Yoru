@@ -1,4 +1,5 @@
 import product from '../../product.json';
+import 'overlayscrollbars/overlayscrollbars.css';
 import './style.css';
 import './desktop.css';
 import './operations.css';
@@ -49,3 +50,5 @@ if(native) {
 
 const titlebar=document.querySelector('.titlebar');
 if(titlebar)new ResizeObserver(()=>document.documentElement.style.setProperty('--app-titlebar-bottom',titlebar.getBoundingClientRect().bottom+'px')).observe(titlebar);
+
+await import('./scrollbars.js');

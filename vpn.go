@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/wailsapp/wails/v3/pkg/application"
+	"errors"
 	"github.com/d0kur0/Yoru/internal/core"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // JSON keeps the persisted schema independent of generated UI model constructors.
@@ -16,12 +17,12 @@ type VPN struct {
 
 func encoded(v any) (string, error)        { b, e := json.Marshal(v); return string(b), e }
 func (v *VPN) LoadConfig() (string, error) { return encoded(v.manager.Config()) }
-func (v *VPN) SaveConfig(data string) (string, error) {
+func (v *VPN) SaveConfig(ctx context.Context, data string) (string, error) {
 	c, e := core.DecodeConfig([]byte(data))
 	if e != nil {
 		return "", e
 	}
-	if e = v.manager.Save(c); e != nil {
+	if e = v.manager.SaveLive(ctx, c); e != nil {
 		return "", e
 	}
 	return encoded(v.manager.Config())
@@ -111,4 +112,48 @@ func (v *VPN) ProcessIcon(ctx context.Context, path string) string {
 
 func (v *VPN) TestRunningServerLatency(ctx context.Context, id string) (int, error) {
 	return v.manager.TestRunningServerLatency(ctx, id)
+}
+
+// ImportRouteSets only reads the file; the UI previews it before SaveConfig.
+func (v *VPN) ImportRouteSets() (string, error) {
+	path, err := v.app.Dialog.OpenFile().SetTitle("Импорт наборов маршрутизации").AddFilter("Наборы Yoru (JSON)", "*.json").AttachToWindow(v.window).PromptForSingleSelection()
+	if err != nil || path == "" {
+		return "", err
+	}
+	sets, err := core.ReadRouteSets(path)
+	if err != nil {
+		return "", err
+	}
+	return encoded(sets)
+}
+
+// An empty id exports every routing set, preserving their order.
+func (v *VPN) ExportRouteSets(id string) (bool, error) {
+	sets := v.manager.Config().Sets
+	if id != "" {
+		found := false
+		for _, set := range sets {
+			if set.ID == id {
+				sets = []core.RouteSet{set}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false, errors.New("Набор не найден")
+		}
+	}
+	if len(sets) == 0 {
+		return false, errors.New("Нет наборов для экспорта")
+	}
+	filename := "yoru-route-sets.json"
+	if id != "" {
+		filename = "yoru-route-set.json"
+	}
+	path, err := v.app.Dialog.SaveFile().SetFilename(filename).AddFilter("Наборы Yoru (JSON)", "*.json").AttachToWindow(v.window).PromptForSingleSelection()
+	if err != nil || path == "" {
+		return false, err
+	}
+	err = core.WriteRouteSets(path, sets)
+	return err == nil, err
 }

@@ -182,6 +182,7 @@ type fakeRunner struct {
 	validationError     bool
 	p                   *fakeProcess
 	token               string
+	lastConfig          map[string]any
 }
 
 func (r *fakeRunner) Validate(context.Context, string, []string) error {
@@ -201,9 +202,11 @@ func (r *fakeRunner) Start(_ string, args []string, _ io.Writer) (Process, error
 	if e = yaml.Unmarshal(b, &c); e != nil {
 		return nil, e
 	}
+	r.lastConfig = c
 	r.token = c["secret"].(string)
+	token := r.token
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.Header.Get("Authorization") != "Bearer "+r.token {
+		if req.Header.Get("Authorization") != "Bearer "+token {
 			w.WriteHeader(401)
 			return
 		}
@@ -285,7 +288,7 @@ func TestLifecycleOnlyOwnedProcess(t *testing.T) {
 	if delay, err := m.TestServerLatency(context.Background(), "a"); err != nil || delay != 42 {
 		t.Fatalf("selected node delay: %d, %v", delay, err)
 	}
-	if delay, err := m.TestServerLatency(context.Background(), "not-applied"); err != nil || delay != -2 {
+	if delay, err := m.TestServerLatency(context.Background(), "not-applied"); err == nil || delay != -1 {
 		t.Fatalf("missing node: %d %v", delay, err)
 	}
 	latency, e := m.TestLatency(context.Background())
@@ -297,13 +300,13 @@ func TestLifecycleOnlyOwnedProcess(t *testing.T) {
 	if e = m.Save(c); e != nil {
 		t.Fatal(e)
 	}
-	if delay, err := m.TestServerLatency(context.Background(), "a"); err != nil || delay != -2 {
+	if delay, err := m.TestServerLatency(context.Background(), "a"); err != nil || delay != 42 {
 		t.Fatalf("changed saved node: %d %v", delay, err)
 	}
 	if delay, err := m.TestRunningServerLatency(context.Background(), "a"); err != nil || delay != 42 {
 		t.Fatalf("running node must remain measurable with pending edits: %d %v", delay, err)
 	}
-	if delay, err := m.TestRunningServerLatency(context.Background(), "missing"); err != nil || delay != -2 {
+	if delay, err := m.TestRunningServerLatency(context.Background(), "missing"); err == nil || delay != -1 {
 		t.Fatalf("unknown running node: %d %v", delay, err)
 	}
 	if e = m.Stop(); e != nil {
