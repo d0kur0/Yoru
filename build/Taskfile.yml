@@ -13,6 +13,14 @@ tasks:
   install:frontend:deps:
     summary: Install frontend dependencies
     run: once
+    # go:mod:tidy is also pulled in concurrently by build:native and by
+    # generate:bindings; this dep just makes sure it finishes before npm
+    # starts writing into frontend/node_modules below. Without it, `go mod
+    # tidy` can walk the module tree mid-`npm ci` and mistake half-extracted
+    # packages under node_modules for unresolved Go imports, which then fail
+    # with "no matching versions for query latest".
+    deps:
+      - task: go:mod:tidy
     cmds:
       - task: install:frontend:deps:{{.PACKAGE_MANAGER}}
 
