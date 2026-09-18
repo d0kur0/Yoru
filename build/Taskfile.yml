@@ -27,7 +27,7 @@ tasks:
       - sh: npm version
         msg: "Looks like npm isn't installed. Npm is part of the Node installer: https://nodejs.org/en/download/"
     cmds:
-      - npm install
+      - '{{if eq .CI "true"}}npm ci{{else}}npm install{{end}}'
 
   install:frontend:deps:bun:
     dir: frontend

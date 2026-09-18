@@ -1,0 +1,151 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - id: plan
+        run: npm run release:plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: version
+    if: ${{ !cancelled() && (needs.version.result == 'success' || github.event_name == 'pull_request') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            os: windows
+            arch: amd64
+            artifact: windows-x64
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+            artifact: macos-arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+            artifact: macos-x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    env:
+      CI: 'true'
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Set release version
+        if: env.RELEASE_VERSION != ''
+        run: node scripts/version.mjs "$RELEASE_VERSION"
+      - name: Frontend checks
+        run: |
+          npm --prefix frontend ci
+          npm test
+          npm --prefix frontend run build
+      - name: Go checks
+        run: |
+          go test ./...
+          go vet ./...
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.8
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe')) {
+            choco install nsis --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          'C:\Program Files (x86)\NSIS' | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Build application and installer
+        run: wails3 package GOOS=${{ matrix.os }} ARCH=${{ matrix.arch }}
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content frontend/product.json | ConvertFrom-Json).version
+          $binary = Get-Item bin/Yoru.exe
+          if ($binary.VersionInfo.ProductVersion -ne $version) { throw 'Executable version mismatch' }
+          New-Item release -ItemType Directory -Force | Out-Null
+          Copy-Item bin/Yoru-amd64-installer.exe "release/Yoru-$version-windows-x64-setup.exe"
+      - name: Package macOS
+        if: runner.os == 'macOS'
+        run: |
+          version=$(node -p "JSON.parse(require('fs').readFileSync('frontend/product.json')).version")
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' bin/Yoru.app/Contents/Info.plist)" = "$version"
+          codesign --verify --deep --strict bin/Yoru.app
+          mkdir -p release bin/dmg
+          cp -R bin/Yoru.app bin/dmg/
+          ln -s /Applications bin/dmg/Applications
+          hdiutil create -volname Yoru -srcfolder bin/dmg -ov -format UDZO "release/Yoru-$version-${{ matrix.artifact }}.dmg"
+          hdiutil verify "release/Yoru-$version-${{ matrix.artifact }}.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: [version, build]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.version.outputs.version != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Publish version, changelog and installers
+        run: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
