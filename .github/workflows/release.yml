@@ -22,10 +22,10 @@ jobs:
     outputs:
       version: ${{ steps.plan.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           cache: npm
@@ -63,12 +63,12 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           cache: npm
@@ -78,6 +78,7 @@ jobs:
         run: node scripts/version.mjs "$RELEASE_VERSION"
       - name: Frontend checks
         run: |
+          npm ci
           npm --prefix frontend ci
           npm test
           npm --prefix frontend run build
@@ -97,7 +98,7 @@ jobs:
           }
           'C:\Program Files (x86)\NSIS' | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Build application and installer
-        run: wails3 package GOOS=${{ matrix.os }} ARCH=${{ matrix.arch }}
+        run: node scripts/package.mjs ${{ matrix.os }} ${{ matrix.arch }}
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -132,10 +133,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           cache: npm

@@ -1,8 +1,8 @@
 import { versionFiles } from './scripts/version.mjs';
 
 export const analysisPlugins = [
-  '@semantic-release/commit-analyzer',
-  '@semantic-release/release-notes-generator',
+  ['@semantic-release/commit-analyzer', { preset: 'conventionalcommits' }],
+  ['@semantic-release/release-notes-generator', { preset: 'conventionalcommits' }],
 ];
 
 export default {
