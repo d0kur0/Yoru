@@ -23,7 +23,7 @@ func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
 	if e != nil {
 		return e
 	}
-	path := filepath.Join(home, "Library", "LaunchAgents", "local.mihomo.desktop.plist")
+	path := filepath.Join(home, "Library", "LaunchAgents", "local.yoru.desktop.plist")
 	if !enabled {
 		e = os.Remove(path)
 		if errors.Is(e, os.ErrNotExist) {
@@ -41,7 +41,7 @@ func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
 	if minimized {
 		args += "<string>--minimized</string>"
 	}
-	return atomicWrite(path, []byte(`<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>local.mihomo.desktop</string><key>ProgramArguments</key><array>`+args+`</array><key>RunAtLoad</key><true/></dict></plist>`), 0600)
+	return atomicWrite(path, []byte(`<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>local.yoru.desktop</string><key>ProgramArguments</key><array>`+args+`</array><key>RunAtLoad</key><true/></dict></plist>`), 0600)
 }
 func network(args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)

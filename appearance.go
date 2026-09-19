@@ -26,7 +26,7 @@ type AppearanceState struct {
 func newAppearance() *Appearance {
 	a := &Appearance{mode: "dark"}
 	if dir, err := os.UserConfigDir(); err == nil {
-		a.path = filepath.Join(dir, "Tiho", "appearance.json")
+		a.path = filepath.Join(dir, "Yoru", "appearance.json")
 		if data, err := os.ReadFile(a.path); err == nil {
 			var mode string
 			if json.Unmarshal(data, &mode) == nil && validTheme(mode) {
@@ -86,5 +86,5 @@ func (a *Appearance) apply() {
 	}
 	a.window.SetBackgroundColour(colour)
 	data, _ := json.Marshal(state)
-	a.window.ExecJS(`window.dispatchEvent(new CustomEvent('tiho-appearance',{detail:` + string(data) + `}));`)
+	a.window.ExecJS(`window.dispatchEvent(new CustomEvent('yoru-appearance',{detail:` + string(data) + `}));`)
 }

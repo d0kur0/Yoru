@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	manager, err := core.New(filepath.Join(configDir, "MihomoDesktop"))
+	manager, err := core.New(filepath.Join(configDir, "Yoru"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func main() {
 		Assets:      application.AssetOptions{Handler: application.AssetFileServerFS(assets)},
 		Mac:         application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: false},
 		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "local.tiho.desktop",
+			UniqueID: "local.yoru.desktop",
 			OnSecondInstanceLaunch: func(application.SecondInstanceData) {
 				if window := mainWindow.Load(); window != nil {
 					showMainWindow(window)

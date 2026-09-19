@@ -23,7 +23,7 @@ func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
 	}
 	defer k.Close()
 	if !enabled {
-		e = k.DeleteValue("MihomoDesktop")
+		e = k.DeleteValue("Yoru")
 		if errors.Is(e, registry.ErrNotExist) {
 			return nil
 		}
@@ -37,7 +37,7 @@ func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
 	if minimized {
 		value += " --minimized"
 	}
-	return k.SetStringValue("MihomoDesktop", value)
+	return k.SetStringValue("Yoru", value)
 }
 
 const internetKey = `Software\Microsoft\Windows\CurrentVersion\Internet Settings`

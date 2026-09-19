@@ -97,15 +97,13 @@ wails3 build
 
 ## Где лежат настройки
 
-Для совместимости с ранними версиями каталог данных сохранил прежнее имя:
-
 | Система | Каталог |
 | --- | --- |
-| Windows | `%APPDATA%/MihomoDesktop` |
-| macOS | `~/Library/Application Support/MihomoDesktop` |
-| Linux | `MihomoDesktop` внутри `os.UserConfigDir()` |
+| Windows | `%APPDATA%/Yoru` |
+| macOS | `~/Library/Application Support/Yoru` |
+| Linux | `Yoru` внутри `os.UserConfigDir()` |
 
-`config.json` содержит настройки и ключи серверов, `runtime/config.yaml` — конфигурацию ядра. Журналы ротируются по размеру и сроку хранения. Настройки темы ранних сборок остаются в каталоге `Tiho`; прежние резервные копии поддерживаются.
+`config.json` содержит настройки и ключи серверов, `runtime/config.yaml` — конфигурацию ядра. Журналы ротируются по размеру и сроку хранения.
 
 Экспорт настроек и URL подписки могут содержать секреты. Перед публикацией issue удаляйте их из файлов и скриншотов.
 
