@@ -42,7 +42,6 @@ type Platform interface {
 	Autostart(enabled, minimized, tun bool) error
 	Proxy(int) (func() error, error)
 	IsElevated() bool
-	RequestElevatedRelaunch() error
 }
 type Status struct {
 	ActiveServer   string       `json:"activeServer"`
@@ -138,41 +137,6 @@ func (m *Manager) save(c Config) error {
 	_ = json.Unmarshal(b, &m.config)
 	m.log.Configure(*m.config.Logging)
 	return nil
-}
-
-func (m *Manager) resumeConnectMarker() string {
-	return filepath.Join(m.dir, "resume-connect.marker")
-}
-
-// RequestElevation asks the platform to relaunch the app elevated (Windows
-// only; see Platform.RequestElevatedRelaunch). If resumeConnect is set, the
-// elevated instance auto-connects on startup once it comes back up - see
-// ConsumeResumeConnectMarker, checked from main.go's ApplicationStarted
-// handler. The caller is expected to quit right after this returns
-// successfully, so the current instance releases the single-instance lock
-// before the elevated replacement tries to start.
-func (m *Manager) RequestElevation(resumeConnect bool) error {
-	if resumeConnect {
-		if e := atomicWrite(m.resumeConnectMarker(), []byte("1"), 0600); e != nil {
-			return e
-		}
-	}
-	if e := m.platform.RequestElevatedRelaunch(); e != nil {
-		_ = os.Remove(m.resumeConnectMarker())
-		return e
-	}
-	return nil
-}
-
-// ConsumeResumeConnectMarker reports whether an elevated relaunch was asked
-// to auto-connect, removing the marker so it only takes effect once.
-func (m *Manager) ConsumeResumeConnectMarker() bool {
-	path := m.resumeConnectMarker()
-	if _, e := os.Stat(path); e != nil {
-		return false
-	}
-	_ = os.Remove(path)
-	return true
 }
 
 func freePort() (int, error) {

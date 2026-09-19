@@ -169,8 +169,7 @@ func (p *fakePlatform) Proxy(int) (func() error, error) {
 	p.enabled++
 	return func() error { p.restored++; return nil }, nil
 }
-func (p *fakePlatform) IsElevated() bool               { return p.elevated }
-func (p *fakePlatform) RequestElevatedRelaunch() error { return nil }
+func (p *fakePlatform) IsElevated() bool { return p.elevated }
 
 type fakeProcess struct {
 	server *httptest.Server
@@ -403,21 +402,6 @@ func TestAutostartReappliesWhenTUNChangesWhileEnabled(t *testing.T) {
 	}
 	if p.autostartCalls != calls+1 {
 		t.Fatalf("expected Autostart to be re-applied on TUN change, calls=%d want=%d", p.autostartCalls, calls+1)
-	}
-}
-func TestRequestElevationMarksAndConsumesResumeConnect(t *testing.T) {
-	m, _, _ := testManager(t)
-	if m.ConsumeResumeConnectMarker() {
-		t.Fatal("marker should not exist yet")
-	}
-	if e := m.RequestElevation(true); e != nil {
-		t.Fatal(e)
-	}
-	if !m.ConsumeResumeConnectMarker() {
-		t.Fatal("expected marker to be set")
-	}
-	if m.ConsumeResumeConnectMarker() {
-		t.Fatal("marker should be consumed only once")
 	}
 }
 func TestStaleConfigCannotOverwriteBackgroundUpdate(t *testing.T) {

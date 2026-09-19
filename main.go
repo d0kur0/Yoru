@@ -20,18 +20,6 @@ import (
 var assets embed.FS
 
 func main() {
-	// Spawned detached by Manager.RequestElevation/Platform.RequestElevatedRelaunch
-	// right before the requesting instance quits. Sleeping here (instead of
-	// firing schtasks immediately) gives that instance time to release the
-	// Wails single-instance lock before the elevated replacement tries to
-	// start - see internal/core/elevate_windows.go for the other half.
-	if slices.Contains(os.Args[1:], "--elevate-relaunch-helper") {
-		time.Sleep(2 * time.Second)
-		if err := core.RelaunchElevated(); err != nil {
-			log.Print(err)
-		}
-		return
-	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal(err)
@@ -84,8 +72,7 @@ func main() {
 	}
 	app.Event.OnApplicationEvent(events.Common.ApplicationStarted, func(*application.ApplicationEvent) {
 		go func() {
-			resumeConnect := manager.ConsumeResumeConnectMarker()
-			if manager.Config().Settings.AutoConnect || resumeConnect {
+			if manager.Config().Settings.AutoConnect {
 				if err := manager.Start(ctx); err != nil {
 					log.Printf("Autoconnect: %v", err)
 				}

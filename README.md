@@ -37,7 +37,7 @@ Yoru — desktop-клиент для [Mihomo](https://github.com/MetaCubeX/mihom
 
 | Система | Файл | Как установить |
 | --- | --- | --- |
-| Windows x64 | `Yoru-…-windows-x64-setup.exe` | Запустите установщик. При необходимости он установит WebView2. |
+| Windows x64 | `Yoru-…-windows-x64-setup.exe` | Запустите установщик. При необходимости он установит WebView2. Yoru запрашивает права администратора при запуске. |
 | macOS · Apple Silicon | `Yoru-…-macos-arm64.dmg` | Откройте образ и перетащите Yoru в Applications. |
 | macOS · Intel | `Yoru-…-macos-x64.dmg` | Откройте образ и перетащите Yoru в Applications. |
 

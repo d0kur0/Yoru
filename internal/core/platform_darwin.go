@@ -24,11 +24,6 @@ func newPlatform(dir string) Platform { return &desktopPlatform{dir} }
 // Status().NeedsElevation from spuriously showing an admin-rights prompt.
 func (p *desktopPlatform) IsElevated() bool { return true }
 
-// RequestElevatedRelaunch has no macOS equivalent yet.
-func (p *desktopPlatform) RequestElevatedRelaunch() error {
-	return errors.New("запрос прав администратора пока доступен только в Windows")
-}
-
 // tun is unused on macOS: TUN doesn't change how autostart is registered here.
 func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 	home, e := os.UserHomeDir()

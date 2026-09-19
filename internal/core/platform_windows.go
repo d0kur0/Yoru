@@ -2,14 +2,17 @@ package core
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -17,12 +20,7 @@ type desktopPlatform struct{ dir string }
 
 func newPlatform(dir string) Platform { return &desktopPlatform{dir} }
 
-// Autostart writes the HKCU Run entry that starts Yoru at logon. TUN needs
-// admin rights, so when it's on the entry launches through the pre-approved
-// scheduled task (see elevate_windows.go) instead of the exe directly - the
-// Run key itself always fires unprivileged, only what it points at differs.
-// --minimized isn't threaded through the elevated path: schtasks /run can't
-// carry it, and a launch that's already popping a window briefly is fine.
+// Autostart uses an elevated on-demand task; the Run entry is the opt-in trigger.
 func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 	k, _, e := registry.CreateKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Run`, registry.SET_VALUE)
 	if e != nil {
@@ -31,26 +29,57 @@ func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 	defer k.Close()
 	if !enabled {
 		e = k.DeleteValue("Yoru")
-		if errors.Is(e, registry.ErrNotExist) {
-			return nil
-		}
-		return e
-	}
-	if tun {
-		if e := ensureElevationTask(); e != nil {
+		if e != nil && !errors.Is(e, registry.ErrNotExist) {
 			return e
 		}
-		return k.SetStringValue("Yoru", `schtasks.exe /run /tn "`+elevationTaskName+`"`)
+		cmd := exec.Command("schtasks.exe", "/delete", "/tn", "Yoru", "/f")
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		_ = cmd.Run()
+		return nil
 	}
 	exe, e := os.Executable()
 	if e != nil {
 		return e
 	}
-	value := `"` + exe + `"`
-	if minimized {
-		value += " --minimized"
+	user, e := windows.GetCurrentProcessToken().GetTokenUser()
+	if e != nil {
+		return e
 	}
-	return k.SetStringValue("Yoru", value)
+	file, e := os.CreateTemp("", "yoru-autostart-*.xml")
+	if e != nil {
+		return e
+	}
+	defer os.Remove(file.Name())
+	_, writeErr := file.WriteString(autostartTaskXML(exe, user.User.Sid.String(), minimized))
+	closeErr := file.Close()
+	if e = errors.Join(writeErr, closeErr); e != nil {
+		return e
+	}
+	// Replace existing task so its executable path and arguments stay current.
+	cmd := exec.Command("schtasks.exe", "/create", "/tn", "Yoru", "/xml", file.Name(), "/f")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	if out, e := cmd.CombinedOutput(); e != nil {
+		return fmt.Errorf("настройка автозапуска: %s: %w", strings.TrimSpace(string(out)), e)
+	}
+	return k.SetStringValue("Yoru", `schtasks.exe /run /tn "Yoru"`)
+}
+
+func autostartTaskXML(exe, sid string, minimized bool) string {
+	escape := func(value string) string {
+		var b strings.Builder
+		_ = xml.EscapeText(&b, []byte(value))
+		return b.String()
+	}
+	args := ""
+	if minimized {
+		args = "--minimized"
+	}
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+<Principals><Principal id="User"><UserId>` + escape(sid) + `</UserId><LogonType>InteractiveToken</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
+<Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><ExecutionTimeLimit>PT0S</ExecutionTimeLimit></Settings>
+<Actions Context="User"><Exec><Command>` + escape(exe) + `</Command><Arguments>` + args + `</Arguments></Exec></Actions>
+</Task>`
 }
 
 const internetKey = `Software\Microsoft\Windows\CurrentVersion\Internet Settings`
