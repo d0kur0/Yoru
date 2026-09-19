@@ -18,7 +18,19 @@ import (
 type desktopPlatform struct{ dir string }
 
 func newPlatform(dir string) Platform { return &desktopPlatform{dir} }
-func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
+
+// IsElevated always reports true here: macOS doesn't participate in the
+// Windows admin-elevation flow (see elevate_windows.go), so this just keeps
+// Status().NeedsElevation from spuriously showing an admin-rights prompt.
+func (p *desktopPlatform) IsElevated() bool { return true }
+
+// RequestElevatedRelaunch has no macOS equivalent yet.
+func (p *desktopPlatform) RequestElevatedRelaunch() error {
+	return errors.New("запрос прав администратора пока доступен только в Windows")
+}
+
+// tun is unused on macOS: TUN doesn't change how autostart is registered here.
+func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 	home, e := os.UserHomeDir()
 	if e != nil {
 		return e

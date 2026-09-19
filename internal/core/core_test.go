@@ -157,9 +157,11 @@ func TestReleaseAssets(t *testing.T) {
 type fakePlatform struct {
 	enabled, restored int
 	fail              bool
+	elevated          bool
+	autostartCalls    int
 }
 
-func (*fakePlatform) Autostart(bool, bool) error { return nil }
+func (p *fakePlatform) Autostart(bool, bool, bool) error { p.autostartCalls++; return nil }
 func (p *fakePlatform) Proxy(int) (func() error, error) {
 	if p.fail {
 		return nil, errors.New("proxy denied")
@@ -167,6 +169,8 @@ func (p *fakePlatform) Proxy(int) (func() error, error) {
 	p.enabled++
 	return func() error { p.restored++; return nil }, nil
 }
+func (p *fakePlatform) IsElevated() bool               { return p.elevated }
+func (p *fakePlatform) RequestElevatedRelaunch() error { return nil }
 
 type fakeProcess struct {
 	server *httptest.Server
@@ -364,6 +368,58 @@ func TestConfigSurvivesReloadWithoutStarting(t *testing.T) {
 	}
 }
 
+func TestStatusReportsNeedsElevationOnlyWhenTUNIsOnAndNotElevated(t *testing.T) {
+	m, _, p := testManager(t)
+	ctx := context.Background()
+	if s := m.Status(ctx); !s.NeedsElevation || s.Elevated {
+		t.Fatalf("expected needsElevation with TUN on and not elevated, got %+v", s)
+	}
+	p.elevated = true
+	if s := m.Status(ctx); s.NeedsElevation || !s.Elevated {
+		t.Fatalf("expected no needsElevation once elevated, got %+v", s)
+	}
+	c := m.Config()
+	c.Settings.TUN = false
+	if e := m.Save(c); e != nil {
+		t.Fatal(e)
+	}
+	p.elevated = false
+	if s := m.Status(ctx); s.NeedsElevation {
+		t.Fatalf("TUN off should never need elevation, got %+v", s)
+	}
+}
+func TestAutostartReappliesWhenTUNChangesWhileEnabled(t *testing.T) {
+	m, _, p := testManager(t)
+	c := m.Config()
+	c.Settings.Autostart = true
+	if e := m.Save(c); e != nil {
+		t.Fatal(e)
+	}
+	calls := p.autostartCalls
+	c = m.Config()
+	c.Settings.TUN = false
+	if e := m.Save(c); e != nil {
+		t.Fatal(e)
+	}
+	if p.autostartCalls != calls+1 {
+		t.Fatalf("expected Autostart to be re-applied on TUN change, calls=%d want=%d", p.autostartCalls, calls+1)
+	}
+}
+func TestRequestElevationMarksAndConsumesResumeConnect(t *testing.T) {
+	m, _, _ := testManager(t)
+	if m.ConsumeResumeConnectMarker() {
+		t.Fatal("marker should not exist yet")
+	}
+	if e := m.RequestElevation(true); e != nil {
+		t.Fatal(e)
+	}
+	if !m.ConsumeResumeConnectMarker() {
+		t.Fatal("expected marker to be set")
+	}
+	if m.ConsumeResumeConnectMarker() {
+		t.Fatal("marker should be consumed only once")
+	}
+}
 func TestStaleConfigCannotOverwriteBackgroundUpdate(t *testing.T) {
 	m, _, _ := testManager(t)
 	old := m.Config()

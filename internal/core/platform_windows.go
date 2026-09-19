@@ -16,7 +16,14 @@ import (
 type desktopPlatform struct{ dir string }
 
 func newPlatform(dir string) Platform { return &desktopPlatform{dir} }
-func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
+
+// Autostart writes the HKCU Run entry that starts Yoru at logon. TUN needs
+// admin rights, so when it's on the entry launches through the pre-approved
+// scheduled task (see elevate_windows.go) instead of the exe directly - the
+// Run key itself always fires unprivileged, only what it points at differs.
+// --minimized isn't threaded through the elevated path: schtasks /run can't
+// carry it, and a launch that's already popping a window briefly is fine.
+func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 	k, _, e := registry.CreateKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Run`, registry.SET_VALUE)
 	if e != nil {
 		return e
@@ -28,6 +35,12 @@ func (p *desktopPlatform) Autostart(enabled, minimized bool) error {
 			return nil
 		}
 		return e
+	}
+	if tun {
+		if e := ensureElevationTask(); e != nil {
+			return e
+		}
+		return k.SetStringValue("Yoru", `schtasks.exe /run /tn "`+elevationTaskName+`"`)
 	}
 	exe, e := os.Executable()
 	if e != nil {

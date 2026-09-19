@@ -39,23 +39,27 @@ type Manager struct {
 	log              *rotatingLog
 }
 type Platform interface {
-	Autostart(bool, bool) error
+	Autostart(enabled, minimized, tun bool) error
 	Proxy(int) (func() error, error)
+	IsElevated() bool
+	RequestElevatedRelaunch() error
 }
 type Status struct {
-	ActiveServer  string       `json:"activeServer"`
-	UsingReserve  bool         `json:"usingReserve"`
-	Bundled       bool         `json:"bundled"`
-	Revision      uint64       `json:"revision"`
-	Installed     bool         `json:"installed"`
-	Version       string       `json:"version"`
-	Running       bool         `json:"running"`
-	Started       int64        `json:"started"`
-	Error         string       `json:"error"`
-	Pending       bool         `json:"pending"`
-	DownloadTotal uint64       `json:"downloadTotal"`
-	UploadTotal   uint64       `json:"uploadTotal"`
-	Connections   []Connection `json:"connections"`
+	ActiveServer   string       `json:"activeServer"`
+	UsingReserve   bool         `json:"usingReserve"`
+	Bundled        bool         `json:"bundled"`
+	Revision       uint64       `json:"revision"`
+	Installed      bool         `json:"installed"`
+	Version        string       `json:"version"`
+	Running        bool         `json:"running"`
+	Started        int64        `json:"started"`
+	Error          string       `json:"error"`
+	Pending        bool         `json:"pending"`
+	DownloadTotal  uint64       `json:"downloadTotal"`
+	UploadTotal    uint64       `json:"uploadTotal"`
+	Connections    []Connection `json:"connections"`
+	Elevated       bool         `json:"elevated"`
+	NeedsElevation bool         `json:"needsElevation"`
 }
 type Connection struct {
 	ProcessPath string `json:"processPath"`
@@ -117,15 +121,16 @@ func (m *Manager) save(c Config) error {
 		return e
 	}
 	old := m.config.Settings
-	changed := old.Autostart != c.Settings.Autostart || (old.Minimized != c.Settings.Minimized && c.Settings.Autostart)
+	changed := old.Autostart != c.Settings.Autostart ||
+		(c.Settings.Autostart && (old.Minimized != c.Settings.Minimized || old.TUN != c.Settings.TUN))
 	if changed {
-		if e = m.platform.Autostart(c.Settings.Autostart, c.Settings.Minimized); e != nil {
+		if e = m.platform.Autostart(c.Settings.Autostart, c.Settings.Minimized, c.Settings.TUN); e != nil {
 			return e
 		}
 	}
 	if e = atomicWrite(filepath.Join(m.dir, "config.json"), b, 0600); e != nil {
 		if changed {
-			_ = m.platform.Autostart(old.Autostart, old.Minimized)
+			_ = m.platform.Autostart(old.Autostart, old.Minimized, old.TUN)
 		}
 		return e
 	}
@@ -134,6 +139,42 @@ func (m *Manager) save(c Config) error {
 	m.log.Configure(*m.config.Logging)
 	return nil
 }
+
+func (m *Manager) resumeConnectMarker() string {
+	return filepath.Join(m.dir, "resume-connect.marker")
+}
+
+// RequestElevation asks the platform to relaunch the app elevated (Windows
+// only; see Platform.RequestElevatedRelaunch). If resumeConnect is set, the
+// elevated instance auto-connects on startup once it comes back up - see
+// ConsumeResumeConnectMarker, checked from main.go's ApplicationStarted
+// handler. The caller is expected to quit right after this returns
+// successfully, so the current instance releases the single-instance lock
+// before the elevated replacement tries to start.
+func (m *Manager) RequestElevation(resumeConnect bool) error {
+	if resumeConnect {
+		if e := atomicWrite(m.resumeConnectMarker(), []byte("1"), 0600); e != nil {
+			return e
+		}
+	}
+	if e := m.platform.RequestElevatedRelaunch(); e != nil {
+		_ = os.Remove(m.resumeConnectMarker())
+		return e
+	}
+	return nil
+}
+
+// ConsumeResumeConnectMarker reports whether an elevated relaunch was asked
+// to auto-connect, removing the marker so it only takes effect once.
+func (m *Manager) ConsumeResumeConnectMarker() bool {
+	path := m.resumeConnectMarker()
+	if _, e := os.Stat(path); e != nil {
+		return false
+	}
+	_ = os.Remove(path)
+	return true
+}
+
 func freePort() (int, error) {
 	l, e := net.Listen("tcp", "127.0.0.1:0")
 	if e != nil {
@@ -356,6 +397,8 @@ func (m *Manager) Status(ctx context.Context) Status {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s := Status{Bundled: HasBundledCore(), Error: m.lastError, Connections: []Connection{}, Revision: m.config.Revision}
+	s.Elevated = m.platform.IsElevated()
+	s.NeedsElevation = m.config.Settings.TUN && !s.Elevated
 	if i, e := m.installed(false); e == nil {
 		s.Installed = true
 		s.Version = i.Version

@@ -92,6 +92,17 @@ export function RecoverProxy(): $CancellablePromise<void> {
     return $Call.ByID(2500727668);
 }
 
+/**
+ * RequestElevation relaunches the app with administrator rights (Windows
+ * only) so TUN can start. On success the app quits right away to free the
+ * single-instance lock for the elevated replacement - see
+ * Manager.RequestElevation and the --elevate-relaunch-helper handling in
+ * main.go for the rest of the handoff.
+ */
+export function RequestElevation(resumeConnect: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1430237440, resumeConnect);
+}
+
 export function SaveConfig(data: string): $CancellablePromise<string> {
     return $Call.ByID(2018231407, data);
 }

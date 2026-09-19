@@ -93,6 +93,17 @@ Section
 
     !insertmacro wails.files
 
+    !if "${WAILS_INSTALL_SCOPE}" != "user"
+        ; Pre-authorizes an elevated relaunch for TUN mode: the installer is
+        ; already running elevated here (machine scope), so this is the one
+        ; UAC-adjacent moment where Windows lets us register a
+        ; Highest-privilege scheduled task without asking again later. Its
+        ; own trigger is a one-time schedule already in the past - it never
+        ; fires on its own, it only exists as an on-demand target for
+        ; "schtasks /run". See internal/core/elevate_windows.go.
+        nsExec::ExecToLog 'schtasks /create /tn "Yoru" /tr $\"$INSTDIR\${PRODUCT_EXECUTABLE}$\" /sc once /sd 01/01/2000 /st 00:00 /rl highest /f'
+    !endif
+
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
@@ -106,6 +117,8 @@ Section "uninstall"
     !insertmacro wails.setShellContext
 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
+
+    nsExec::ExecToLog 'schtasks /delete /tn "Yoru" /f' # harmless no-op if it was never created (user-scope installs)
 
     RMDir /r $INSTDIR
 

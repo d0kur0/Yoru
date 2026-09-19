@@ -37,7 +37,20 @@ func (v *VPN) InstallCore(ctx context.Context) (string, error) {
 }
 func (v *VPN) Start(ctx context.Context) error { return v.manager.Start(ctx) }
 func (v *VPN) Stop() error                     { return v.manager.Stop() }
-func (v *VPN) PreviewYAML() (string, error)    { return v.manager.Preview() }
+
+// RequestElevation relaunches the app with administrator rights (Windows
+// only) so TUN can start. On success the app quits right away to free the
+// single-instance lock for the elevated replacement - see
+// Manager.RequestElevation and the --elevate-relaunch-helper handling in
+// main.go for the rest of the handoff.
+func (v *VPN) RequestElevation(resumeConnect bool) error {
+	if e := v.manager.RequestElevation(resumeConnect); e != nil {
+		return e
+	}
+	v.app.Quit()
+	return nil
+}
+func (v *VPN) PreviewYAML() (string, error) { return v.manager.Preview() }
 func (v *VPN) ParseServerLink(link string) (string, error) {
 	s, e := core.ParseLink(link)
 	if e != nil {
