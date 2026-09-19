@@ -1,3 +1,16 @@
+## [1.1.1](https://github.com/d0kur0/Yoru/compare/v1.1.0...v1.1.1) (2026-09-19)
+
+### Bug Fixes
+
+* elevate Windows app before startup ([bc168cd](https://github.com/d0kur0/Yoru/commit/bc168cd0496dbd4fa4000318192cb73b08ea7892))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.1.0](https://github.com/d0kur0/Yoru/compare/v1.0.0...v1.1.0) (2026-09-19)
 
 ### Features
