@@ -1,3 +1,16 @@
+## [1.1.0](https://github.com/d0kur0/Yoru/compare/v1.0.0...v1.1.0) (2026-09-19)
+
+### Features
+
+* request Windows admin rights once for TUN instead of every launch ([26d43c5](https://github.com/d0kur0/Yoru/commit/26d43c5f860073d2fcd528fe43929235486b22ba))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## 1.0.0 (2026-09-18)
 
 ### Features
