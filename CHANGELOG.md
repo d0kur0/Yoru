@@ -1,3 +1,16 @@
+## [1.2.0](https://github.com/d0kur0/Yoru/compare/v1.1.1...v1.2.0) (2026-09-22)
+
+### Features
+
+* reload routing live and organize rule editors ([7f5a0ed](https://github.com/d0kur0/Yoru/commit/7f5a0ed24aee5e0273723c53ba96546216457a0c))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.1.1](https://github.com/d0kur0/Yoru/compare/v1.1.0...v1.1.1) (2026-09-19)
 
 ### Bug Fixes
