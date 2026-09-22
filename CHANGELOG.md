@@ -1,3 +1,16 @@
+## [1.2.1](https://github.com/d0kur0/Yoru/compare/v1.2.0...v1.2.1) (2026-09-22)
+
+### Bug Fixes
+
+* encode Windows autostart task as UTF-16 ([1a48665](https://github.com/d0kur0/Yoru/commit/1a48665f49a17a1db230ea958bd2b5ea42a3d8a0))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.2.0](https://github.com/d0kur0/Yoru/compare/v1.1.1...v1.2.0) (2026-09-22)
 
 ### Features
