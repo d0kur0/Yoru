@@ -18,6 +18,8 @@ import (
 )
 
 type Manager struct {
+	retainedTUN      map[string]any
+	pendingTUN       bool
 	lifetime         context.Context
 	cancel           context.CancelFunc
 	mu               sync.Mutex
@@ -44,6 +46,7 @@ type Platform interface {
 	IsElevated() bool
 }
 type Status struct {
+	PendingTUN     bool         `json:"pendingTUN"`
 	ActiveServer   string       `json:"activeServer"`
 	UsingReserve   bool         `json:"usingReserve"`
 	Bundled        bool         `json:"bundled"`
@@ -279,6 +282,8 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 	}
 	m.started = time.Now()
 	m.applied = runtimeSnapshot(m.config)
+	m.retainedTUN = nil
+	m.pendingTUN = false
 	return nil
 }
 func (m *Manager) stop() error {
@@ -380,7 +385,8 @@ func (m *Manager) Status(ctx context.Context) Status {
 		s.Started = m.started.UnixMilli()
 	}
 	b := runtimeSnapshot(m.config)
-	s.Pending = !bytes.Equal(b, m.applied)
+	s.Pending = !bytes.Equal(b, m.applied) || m.pendingTUN
+	s.PendingTUN = m.pendingTUN
 	var group struct {
 		Now string `json:"now"`
 	}

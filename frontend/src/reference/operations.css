@@ -419,3 +419,25 @@ dialog:has(.route-set-import){width:min(900px,calc(100vw - 40px));max-width:calc
 .route-set-preview dl{margin:12px 0;display:grid;gap:8px;font-size:13px;line-height:1.5}
 .route-set-preview dl>div{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px}
 .route-set-preview dt{color:var(--muted)}.route-set-preview dd{margin:0;font-weight:400;overflow-wrap:anywhere}
+
+.routing-apply-status{font-size:12px;line-height:1.5;color:var(--muted);margin:12px 0 18px}
+.rules-tab-footer{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 0;background:var(--bg);z-index:2;border-top:1px solid var(--line)}
+.set-editor .set-tabs{margin:16px 0 0;overflow-x:auto;flex-wrap:nowrap}
+.set-editor .set-tabs button{white-space:nowrap;font-size:13px;padding:10px 12px}
+.set-panels{min-height:250px}
+.set-panels .set-section{background:none;border:0;border-radius:0;padding:20px 0;margin:0;min-height:250px}
+.set-panels .set-section[hidden]{display:none!important}
+.set-panels .set-description,.set-panels .set-example{max-width:75ch}
+.set-panels .list-values{min-height:0;max-height:220px;overflow:auto}
+.set-options-flat{border-top:1px solid var(--line);margin-top:12px}
+.set-options-flat .set-toggle{padding:14px 0;border-bottom:1px solid var(--line);margin:0}
+.set-options-flat .set-toggle small{max-width:75ch;line-height:1.5}
+dialog:has(.set-editor) #modal-form{display:flex;flex-direction:column;max-height:calc(100dvh - var(--app-titlebar-bottom,48px) - 24px)}
+dialog:has(.set-editor) .modal-head,dialog:has(.set-editor) .modal-footer{flex-shrink:0}
+dialog:has(.set-editor) .modal-content{min-height:0;overflow:auto}
+dialog:has(.set-editor) .modal-head p{max-width:75ch}
+.set-editor{gap:12px}
+.set-editor .set-cisco-example{padding:4px 0;border:0;background:none}
+.set-editor .set-tabs{margin-top:4px}
+.set-panels,.set-panels .set-section{min-height:185px}
+.set-panels .list-values:empty{display:none}

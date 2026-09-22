@@ -1,14 +1,19 @@
 package core
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 )
 
 type liveController struct {
@@ -211,6 +216,76 @@ func TestLiveModesWithBundledMihomo(t *testing.T) {
 			t.Fatal(mode, err)
 		}
 	}
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	go func() {
+		conn, err := listener.Accept()
+		if err == nil {
+			defer conn.Close()
+			_, _ = io.Copy(conn, conn)
+		}
+	}()
+	var settings liveSettings
+	if err = m.api(context.Background(), "GET", "/configs", nil, &settings); err != nil {
+		t.Fatal(err)
+	}
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", settings.MixedPort), 3*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	fmt.Fprintf(conn, "CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n", listener.Addr(), listener.Addr())
+	reader := bufio.NewReader(conn)
+	response, err := http.ReadResponse(reader, &http.Request{Method: "CONNECT"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != 200 {
+		t.Fatal(response.Status)
+	}
+	echo := func(value string) {
+		t.Helper()
+		if _, err := fmt.Fprintln(conn, value); err != nil {
+			t.Fatal(err)
+		}
+		line, err := reader.ReadString('\n')
+		if err != nil || line != value+"\n" {
+			t.Fatalf("connection interrupted: %q %v", line, err)
+		}
+	}
+	echo("before reload")
+	c = m.Config()
+	c.Rules = append(c.Rules, Rule{ID: "live-routing", Type: "DOMAIN", Value: "reload.example", Action: "REJECT"})
+	if err = m.SaveLive(context.Background(), c); err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		Rules []struct {
+			Payload string `json:"payload"`
+			Proxy   string `json:"proxy"`
+		} `json:"rules"`
+	}
+	if err = m.api(context.Background(), "GET", "/rules", nil, &rules); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, rule := range rules.Rules {
+		if rule.Payload == "reload.example" && rule.Proxy == "REJECT" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("real core did not receive routing rule")
+	}
+	if err = m.ReloadConfig(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	echo("after reload")
 	if m.process != process || m.started != started {
 		t.Fatal("core restarted")
 	}

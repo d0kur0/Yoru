@@ -158,3 +158,5 @@ func (v *VPN) ExportRouteSets(id string) (bool, error) {
 	err = core.WriteRouteSets(path, sets)
 	return err == nil, err
 }
+
+func (v *VPN) ReloadConfig(ctx context.Context) error { return v.manager.ReloadConfig(ctx) }

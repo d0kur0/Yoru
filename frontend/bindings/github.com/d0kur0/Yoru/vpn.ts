@@ -92,6 +92,10 @@ export function RecoverProxy(): $CancellablePromise<void> {
     return $Call.ByID(2500727668);
 }
 
+export function ReloadConfig(): $CancellablePromise<void> {
+    return $Call.ByID(3781955079);
+}
+
 export function SaveConfig(data: string): $CancellablePromise<string> {
     return $Call.ByID(2018231407, data);
 }
