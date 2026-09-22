@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"unicode/utf16"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -50,7 +52,7 @@ func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 		return e
 	}
 	defer os.Remove(file.Name())
-	_, writeErr := file.WriteString(autostartTaskXML(exe, user.User.Sid.String(), minimized))
+	_, writeErr := file.Write(autostartTaskFile(exe, user.User.Sid.String(), minimized))
 	closeErr := file.Close()
 	if e = errors.Join(writeErr, closeErr); e != nil {
 		return e
@@ -62,6 +64,18 @@ func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {
 		return fmt.Errorf("настройка автозапуска: %s: %w", strings.TrimSpace(string(out)), e)
 	}
 	return k.SetStringValue("Yoru", `schtasks.exe /run /tn "Yoru"`)
+}
+
+// schtasks imports task files as Unicode. Match its UTF-16 declaration and BOM.
+func autostartTaskFile(exe, sid string, minimized bool) []byte {
+	xml := strings.Replace(autostartTaskXML(exe, sid, minimized), `encoding="UTF-8"`, `encoding="UTF-16"`, 1)
+	units := utf16.Encode([]rune(xml))
+	data := make([]byte, 2+len(units)*2)
+	data[0], data[1] = 0xff, 0xfe
+	for i, unit := range units {
+		binary.LittleEndian.PutUint16(data[2+i*2:], unit)
+	}
+	return data
 }
 
 func autostartTaskXML(exe, sid string, minimized bool) string {
