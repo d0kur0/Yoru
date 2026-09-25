@@ -35,7 +35,8 @@ func (m *Manager) SaveLive(parent context.Context, c Config) error {
 	tunChanged := c.Settings.TUN != m.config.Settings.TUN
 	modeChanged := c.Settings.Mode != m.config.Settings.Mode
 	proxyChanged := c.Settings.SystemProxy != m.config.Settings.SystemProxy
-	routingChanged := !reflect.DeepEqual(c.Settings.RouteExclusions, m.config.Settings.RouteExclusions) || !reflect.DeepEqual(c.TUNOptions, m.config.TUNOptions) || !reflect.DeepEqual(c.Rules, m.config.Rules) || !reflect.DeepEqual(c.Sets, m.config.Sets) || !reflect.DeepEqual(c.DNS, m.config.DNS) || c.DefaultAction != m.config.DefaultAction || c.Settings.Sniffer != m.config.Settings.Sniffer || c.Settings.IPv6 != m.config.Settings.IPv6
+	groupChanged := c.Selected != m.config.Selected || !reflect.DeepEqual(c.OrderedServerIDs(), m.config.OrderedServerIDs()) || !reflect.DeepEqual(c.proxyGroups(nil), m.config.proxyGroups(nil))
+	routingChanged := groupChanged || !reflect.DeepEqual(c.Settings.RouteExclusions, m.config.Settings.RouteExclusions) || !reflect.DeepEqual(c.TUNOptions, m.config.TUNOptions) || !reflect.DeepEqual(c.Rules, m.config.Rules) || !reflect.DeepEqual(c.Sets, m.config.Sets) || !reflect.DeepEqual(c.DNS, m.config.DNS) || c.DefaultAction != m.config.DefaultAction || c.Settings.Sniffer != m.config.Settings.Sniffer || c.Settings.IPv6 != m.config.Settings.IPv6
 	if m.process != nil && routingChanged && !tunChanged && !modeChanged && !proxyChanged {
 		return m.reloadConfig(ctx, c)
 	}

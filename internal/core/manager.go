@@ -288,14 +288,23 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 }
 func (m *Manager) stop() error {
 	var result error
+	// Stop sending applications to the local proxy while it is still available.
+	if m.restoreProxy != nil {
+		result = errors.Join(result, m.restoreProxy())
+		m.restoreProxy = nil
+	}
 	if m.process != nil {
 		p := m.process
 		done := m.done
+		if err := m.releaseTUN(); err != nil {
+			// A dead/unresponsive controller must not prevent Stop or app exit.
+			fmt.Fprintf(m.log, "[warning] Освобождение TUN перед остановкой: %v; процесс будет завершён принудительно\n", err)
+		}
 		if e := p.Stop(); e != nil {
 			select {
 			case <-done:
 			default:
-				result = e
+				result = errors.Join(result, e)
 			}
 		}
 		select {
@@ -306,10 +315,6 @@ func (m *Manager) stop() error {
 		case <-time.After(5 * time.Second):
 			return errors.New("Mihomo не завершился; повторите остановку")
 		}
-	}
-	if m.restoreProxy != nil {
-		result = errors.Join(result, m.restoreProxy())
-		m.restoreProxy = nil
 	}
 	return result
 }
