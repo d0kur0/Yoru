@@ -1,3 +1,16 @@
+## [1.3.2](https://github.com/d0kur0/Yoru/compare/v1.3.1...v1.3.2) (2026-09-25)
+
+### Bug Fixes
+
+* install Windows updates silently and relaunch ([5d07428](https://github.com/d0kur0/Yoru/commit/5d0742893b2a8af83756f0376038a79d02160367))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.3.1](https://github.com/d0kur0/Yoru/compare/v1.3.0...v1.3.1) (2026-09-25)
 
 ### Bug Fixes
