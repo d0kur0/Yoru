@@ -12,7 +12,7 @@ document.documentElement.dataset.desktop = 'true';
 const config = emptyConfig();
 config.revision = 1;
 config.settings.groupMode = 'fallback';
-config.settings.latencyURL = 'https://www.apple.com/library/test/success.html';
+config.settings.latencyURL = 'https://www.gstatic.com/generate_204';
 config.subscriptions = [{ id: 'demo-sub', name: 'Моя подписка', url: 'https://subscription.example/servers', intervalHours: 24, updated: new Date().toISOString() }];
 config.servers = [
   { id: 'ams', name: 'Amsterdam', country: 'Нидерланды', flag: '🇳🇱', protocol: 'VLESS', transport: 'Reality', host: 'nl.example', port: 443, subscription: 'demo-sub', options: { type: 'vless', server: 'nl.example', port: 443, tls: true, network: 'tcp', 'reality-opts': { 'public-key': 'DEMO' } } },
@@ -47,6 +47,8 @@ window.APP_API = {
   Status: async () => JSON.stringify({ installed: true, bundled: true, running: true, version: 'v1.19.30', revision: 1, started, activeServer: 'ams', downloadTotal: down += 124000, uploadTotal: up += 7000, connections: rows.map(([app, host, action, down, up], i) => ({ id: String(i), app, host, action, down, up, type: 'tcp', processPath: '', ip: '', rule: 'DomainSuffix' })) }),
   TestServerLatency: async id => ({ ams: 42, fra: 58, hel: 67 })[id],
   TestRunningServerLatency: async () => 42,
+  LogsLocation: async () => 'C:\\Users\\User\\AppData\\Roaming\\Yoru\\logs',
+  OpenLogsFolder: async () => { throw new Error('Папка доступна в установленном приложении'); },
   ProcessIcon: async () => '',
   SaveConfig: async () => { throw new Error('Демонстрационный режим: настройки не сохраняются'); },
 };

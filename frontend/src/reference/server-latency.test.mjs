@@ -1,76 +1,48 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServerLatency} from './server-latency.js';
-test('all nodes are probed, cached and refreshed after interval',async()=>{
- let time=1000;const calls=[];let saved;const storage={getItem:()=>saved,setItem:(_,v)=>saved=v};
- const monitor=createServerLatency(async id=>{calls.push(id);return 42},storage,()=>time);
- const servers=[{id:'a'},{id:'b'}];
- await monitor.tick(true,'session',servers,'url');await monitor.tick(true,'session',servers,'url');await monitor.tick(true,'session',servers,'url');
- assert.deepEqual(calls,['a','b']);assert.equal(monitor.get('a','url').value,42);
- assert.equal(createServerLatency(()=>{},storage).get('b','url').value,42);
- assert.equal(monitor.get('a','changed'),null);
- time+=60000;await monitor.tick(true,'session',servers,'url');assert.deepEqual(calls,['a','b','a']);
+const flush=()=>new Promise(r=>setImmediate(r));
+const nodes=n=>Array.from({length:n},(_,i)=>({id:String(i)}));
+test('automatic batch checks all nodes without starving the tail and caches results',async()=>{
+ let time=1000,saved;const calls=[];
+ const monitor=createServerLatency(async id=>{calls.push(id);time+=31000;return -1;},{getItem:()=>saved,setItem:(_,v)=>saved=v},()=>time);
+ await monitor.tick(true,'s',nodes(20),'url');
+ assert.equal(calls.length,20);assert.equal(new Set(calls).size,20);
+ assert.equal(createServerLatency(()=>{},{getItem:()=>saved}).get('19','url').value,-1);
+ assert.equal(monitor.get('0','other'),null);
 });
-test('late reply after disconnect is discarded',async()=>{
- let resolve;const monitor=createServerLatency(()=>new Promise(r=>resolve=r),null);const nodes=[{id:'a'}];
- const pending=monitor.tick(true,'s',nodes,'url');await monitor.tick(false,'s',nodes,'url');resolve(20);await pending;assert.equal(monitor.get('a','url'),null);
+test('pool limits concurrency to four, publishes each result and distinguishes queued rows',async()=>{
+ const calls=[],resolve=new Map();let active=0,max=0;
+ const monitor=createServerLatency(id=>{calls.push(id);max=Math.max(max,++active);return new Promise(r=>resolve.set(id,v=>{active--;r(v);}));});
+ const work=monitor.refresh(true,'s',nodes(6),'url');await flush();
+ assert.equal(calls.length,4);assert.equal(monitor.activity('4'),'queued');assert.equal(monitor.activity('0'),'measuring');
+ await monitor.tick(true,'s',nodes(6),'url');await monitor.refresh(true,'s',nodes(6),'url');
+ assert.equal(calls.length,4);
+ resolve.get('0')(25);await flush();assert.equal(monitor.get('0','url').value,25);assert.equal(monitor.progress.completed,1);assert.equal(monitor.activity('4'),'measuring');
+ for(const id of ['1','2','3','4'])resolve.get(id)(30);await flush();resolve.get('5')(40);await work;
+ assert.equal(max,4);assert.equal(monitor.refreshing,false);assert.equal(calls.length,6);
 });
-
-test('legacy reconnect sentinel is discarded and replaced with a fresh measurement',async()=>{
- const storage={getItem:()=>JSON.stringify({a:{value:-2,time:1,url:'url'}}),setItem:()=>{}};
- const monitor=createServerLatency(async()=>37,storage);
- assert.equal(monitor.get('a','url'),null);
- await monitor.tick(true,'session',[{id:'a'}],'url');
- assert.equal(monitor.get('a','url').value,37);
+test('disconnect cancels queued work and discards late replies',async()=>{
+ const resolvers=[];const monitor=createServerLatency(()=>new Promise(r=>resolvers.push(r)));
+ const work=monitor.tick(true,'s',nodes(7),'url');await flush();await monitor.tick(false,'s',nodes(7),'url');
+ assert.equal(monitor.activity('0'),null);assert.equal(monitor.refreshing,false);
+ resolvers.forEach(r=>r(20));await work;assert.equal(monitor.get('0','url'),null);assert.equal(resolvers.length,4);
 });
-
-const flush=()=>new Promise(resolve=>setImmediate(resolve));
-test('manual refresh marks every row immediately, drains queue and publishes each result',async()=>{
- const calls=[],resolvers=[],states=[];
- const storage={getItem:()=>JSON.stringify({a:{value:90,time:1,url:'url'},b:{value:80,time:1,url:'url'}}),setItem:()=>{}};
- const monitor=createServerLatency(id=>{calls.push(id);return new Promise(resolve=>resolvers.push(resolve));},storage);
- const nodes=[{id:'a'},{id:'b'}];
- const refresh=monitor.refresh(true,'s',nodes,'url',()=>states.push([monitor.activity('a'),monitor.activity('b')]));
- assert.equal(monitor.refreshing,true);
- assert.equal(monitor.activity('a'),'measuring');assert.equal(monitor.activity('b'),'queued');
- assert.deepEqual(calls,['a']);
- await monitor.tick(true,'s',nodes,'url');await monitor.refresh(true,'s',nodes,'url');
- assert.deepEqual(calls,['a'],'polling and repeated clicks must not duplicate probes');
- resolvers.shift()(31);await flush();
- assert.equal(monitor.get('a','url').value,31);assert.equal(monitor.activity('a'),null);
- assert.equal(monitor.activity('b'),'measuring');assert.deepEqual(calls,['a','b']);
- resolvers.shift()(44);await refresh;
- assert.equal(monitor.get('b','url').value,44);assert.equal(monitor.refreshing,false);
- assert.equal(monitor.activity('b'),null);assert.deepEqual(states[1],['queued','queued']);
+test('new URL waits for old probes without exceeding pool and ignores old replies',async()=>{
+ const resolvers=[];let active=0,max=0;
+ const monitor=createServerLatency(()=>{max=Math.max(max,++active);return new Promise(r=>resolvers.push(v=>{active--;r(v);}));});
+ const old=monitor.tick(true,'s',nodes(4),'old');await flush();const fresh=monitor.tick(true,'s',nodes(4),'new');await flush();
+ assert.equal(resolvers.length,4);resolvers.splice(0).forEach(r=>r(50));await old;await flush();
+ assert.equal(monitor.get('0','old'),null);resolvers.splice(0).forEach(r=>r(10));await fresh;
+ assert.equal(max,4);assert.equal(monitor.get('0','new').value,10);
 });
-test('manual refresh reuses current automatic probe and then checks remaining nodes',async()=>{
- const calls=[],resolvers=[];
- const monitor=createServerLatency(id=>{calls.push(id);return new Promise(resolve=>resolvers.push(resolve));},null);
- const nodes=[{id:'a'},{id:'b'}];
- const automatic=monitor.tick(true,'s',nodes,'url');
- const manual=monitor.refresh(true,'s',nodes,'url');
- resolvers.shift()(20);await automatic;await flush();
- assert.deepEqual(calls,['a','b']);assert.equal(monitor.activity('a'),null);
- resolvers.shift()(30);await manual;assert.equal(monitor.refreshing,false);
+test('failed probe does not stop batch and success respects refresh interval',async()=>{
+ let time=1000,calls=0;const monitor=createServerLatency(async id=>{calls++;if(id==='0')throw Error('timeout');return 22;},null,()=>time);
+ await monitor.tick(true,'s',nodes(2),'url');assert.equal(monitor.get('0','url').value,-1);assert.equal(monitor.get('1','url').value,22);
+ await monitor.tick(true,'s',nodes(2),'url');assert.equal(calls,2);
+ time+=30000;await monitor.tick(true,'s',nodes(2),'url');assert.equal(calls,3);
 });
-test('disconnect cancels manual queue and ignores late result',async()=>{
- let resolve;const calls=[];
- const monitor=createServerLatency(id=>{calls.push(id);return new Promise(r=>resolve=r);},null);
- const nodes=[{id:'a'},{id:'b'}];
- const manual=monitor.refresh(true,'s',nodes,'url');
- await monitor.tick(false,'s',nodes,'url');
- assert.equal(monitor.refreshing,false);assert.equal(monitor.activity('a'),null);assert.equal(monitor.activity('b'),null);
- resolve(20);await manual;assert.equal(monitor.get('a','url'),null);assert.deepEqual(calls,['a']);
-});
-test('failed probe clears its spinner and does not stop remaining queue',async()=>{
- const calls=[];const monitor=createServerLatency(async id=>{calls.push(id);if(id==='a')throw Error('timeout');return 22;},null);
- await monitor.refresh(true,'s',[{id:'a'},{id:'b'}],'url');
- assert.deepEqual(calls,['a','b']);assert.equal(monitor.get('a','url').value,-1);assert.equal(monitor.get('b','url').value,22);
- assert.equal(monitor.refreshing,false);assert.equal(monitor.activity('a'),null);
-});
-test('changing URL during manual refresh discards old results and queue',async()=>{
- let resolve;const calls=[];const monitor=createServerLatency(id=>{calls.push(id);return new Promise(r=>resolve=r);},null);
- const nodes=[{id:'a'},{id:'b'}];const manual=monitor.refresh(true,'s',nodes,'old');
- await monitor.tick(true,'s',nodes,'new');resolve(80);await manual;
- assert.equal(monitor.get('a','old'),null);assert.equal(monitor.refreshing,false);assert.deepEqual(calls,['a']);
+test('legacy reconnect sentinel is not shown',async()=>{
+ const monitor=createServerLatency(async()=>37,{getItem:()=>JSON.stringify({'0':{value:-2,time:1,url:'url'}})});
+ assert.equal(monitor.get('0','url'),null);await monitor.tick(true,'s',nodes(1),'url');assert.equal(monitor.get('0','url').value,37);
 });

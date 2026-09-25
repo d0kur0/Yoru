@@ -107,6 +107,10 @@ func (l *rotatingLog) String() string {
 	return s
 }
 func (l *rotatingLog) Reset() { l.mu.Lock(); defer l.mu.Unlock(); l.b = nil }
+
+// LogsDir is the fixed directory used by the Mihomo log writer.
+func (m *Manager) LogsDir() string { return m.log.dir }
+
 func (m *Manager) ClearLogs() error {
 	l := m.log
 	l.mu.Lock()

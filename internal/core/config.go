@@ -199,6 +199,12 @@ func (c Config) Validate() error {
 		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
 			return errors.New("Адрес проверки задержки: укажите HTTP/HTTPS URL без логина и фрагмента")
 		}
+		if port := u.Port(); port != "" {
+			n, err := strconv.Atoi(port)
+			if err != nil || n < 1 || n > 65535 {
+				return errors.New("Адрес проверки задержки: некорректный порт")
+			}
+		}
 	}
 
 	if e := c.validateExtensions(); e != nil {
@@ -494,7 +500,7 @@ func (c Config) LatencyTestURL() string {
 	if c.Settings.LatencyURL != "" {
 		return c.Settings.LatencyURL
 	}
-	return "https://www.apple.com/library/test/success.html"
+	return "https://www.gstatic.com/generate_204"
 }
 func runtimeSnapshot(c Config) []byte {
 	b, _ := json.Marshal(c)

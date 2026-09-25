@@ -317,7 +317,16 @@ func (m *Manager) UpdateSubscription(ctx context.Context, id string) (Config, er
 	}
 	c.Subscriptions = append([]Subscription{}, c.Subscriptions...)
 	c.Subscriptions[idx].Updated = time.Now().UTC().Format(time.RFC3339)
-	if e = m.save(c); e != nil {
+	c.normalize()
+	if e = c.Validate(); e != nil {
+		return Config{}, e
+	}
+	if m.process != nil {
+		e = m.reloadConfig(ctx, c)
+	} else {
+		e = m.save(c)
+	}
+	if e != nil {
 		return Config{}, e
 	}
 	c.Revision = m.config.Revision

@@ -18,14 +18,14 @@ export function CheckAppUpdate(): $CancellablePromise<string> {
     return $Call.ByID(1644843250);
 }
 
-export function ClearLogs(): $CancellablePromise<void> {
-    return $Call.ByID(2089889390);
-}
-
 export function CloseConnection(id: string): $CancellablePromise<void> {
     return $Call.ByID(1660024404, id);
 }
 
+/**
+ * CopyLogText is a legacy clipboard API also used by the server editor to
+ * copy credentials. Keep its name and size limit for existing frontend calls.
+ */
 export function CopyLogText(text: string): $CancellablePromise<boolean> {
     return $Call.ByID(3943791706, text);
 }
@@ -36,10 +36,6 @@ export function DownloadAppUpdate(): $CancellablePromise<string> {
 
 export function ExportBackup(): $CancellablePromise<boolean> {
     return $Call.ByID(2057329072);
-}
-
-export function ExportLogs(): $CancellablePromise<boolean> {
-    return $Call.ByID(2705101069);
 }
 
 /**
@@ -88,8 +84,23 @@ export function Logs(): $CancellablePromise<string> {
     return $Call.ByID(735830563);
 }
 
+/**
+ * LogsLocation exposes the log writer's own directory, never a caller path.
+ */
+export function LogsLocation(): $CancellablePromise<string> {
+    return $Call.ByID(832583476);
+}
+
 export function OpenExternalURL(address: string): $CancellablePromise<void> {
     return $Call.ByID(1286088376, address);
+}
+
+/**
+ * OpenLogsFolder opens the directory in Explorer or Finder. Creating it first
+ * makes the action useful before Mihomo has written its first log message.
+ */
+export function OpenLogsFolder(): $CancellablePromise<void> {
+    return $Call.ByID(3193115311);
 }
 
 export function ParseServerLink(link: string): $CancellablePromise<string> {
