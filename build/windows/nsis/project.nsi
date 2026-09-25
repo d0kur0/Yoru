@@ -55,6 +55,8 @@ ManifestDPIAware true
 !define MUI_UNICON "..\icon.ico"
 # !define MUI_WELCOMEFINISHPAGE_BITMAP "resources\leftimage.bmp" #Include this to add a bitmap on the left side of the Welcome Page. Must be a size of 164x314
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXECUTABLE}"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch ${INFO_PRODUCTNAME}"
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
 
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
@@ -80,8 +82,39 @@ OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the i
 !endif
 ShowInstDetails show # This will always show the installation details.
 
+Var UpdatePID
+
 Function .onInit
    !insertmacro wails.checkArchitecture
+   ${GetParameters} $0
+   ClearErrors
+   ${GetOptions} $0 "/UPDATEPID=" $UpdatePID
+   IfErrors done
+
+   # Open the process immediately to avoid waiting on a recycled PID later.
+   # SYNCHRONIZE is enough; the installer never terminates a process.
+   System::Call 'kernel32::OpenProcess(i 0x00100000, i 0, i $UpdatePID) p .r0 ?e'
+   Pop $1
+   ${If} $0 == 0
+       # ERROR_INVALID_PARAMETER means the app exited before we opened it.
+       ${If} $1 != 87
+           IfSilent +2
+           MessageBox MB_ICONSTOP "Unable to wait for ${INFO_PRODUCTNAME} to exit (Windows error $1). Installation was not started."
+           SetErrorLevel 66
+           Abort
+       ${EndIf}
+   ${Else}
+       # WAIT_OBJECT_0 = 0. A hung shutdown must not trigger file replacement.
+       System::Call 'kernel32::WaitForSingleObject(p r0, i 120000) i .r1'
+       System::Call 'kernel32::CloseHandle(p r0)'
+       ${If} $1 != 0
+           IfSilent +2
+           MessageBox MB_ICONSTOP "${INFO_PRODUCTNAME} did not exit in time. Installation was not started."
+           SetErrorLevel 67
+           Abort
+       ${EndIf}
+   ${EndIf}
+   done:
 FunctionEnd
 
 Section

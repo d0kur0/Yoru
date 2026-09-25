@@ -32,7 +32,7 @@ func main() {
 	defer cancel()
 	var mainWindow atomic.Pointer[application.WebviewWindow]
 	appearance := newAppearance()
-	vpn := &VPN{manager: manager}
+	vpn := &VPN{manager: manager, updates: newAppUpdateManager()}
 	app := application.New(application.Options{
 		Name:        product.Name,
 		Services:    []application.Service{application.NewService(appearance), application.NewService(vpn)},

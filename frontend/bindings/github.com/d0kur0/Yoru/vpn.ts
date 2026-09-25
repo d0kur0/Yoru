@@ -10,6 +10,14 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wailsio/runtime";
 
+export function AppUpdateStatus(): $CancellablePromise<string> {
+    return $Call.ByID(4221056084);
+}
+
+export function CheckAppUpdate(): $CancellablePromise<string> {
+    return $Call.ByID(1644843250);
+}
+
 export function ClearLogs(): $CancellablePromise<void> {
     return $Call.ByID(2089889390);
 }
@@ -20,6 +28,10 @@ export function CloseConnection(id: string): $CancellablePromise<void> {
 
 export function CopyLogText(text: string): $CancellablePromise<boolean> {
     return $Call.ByID(3943791706, text);
+}
+
+export function DownloadAppUpdate(): $CancellablePromise<string> {
+    return $Call.ByID(3010648730);
 }
 
 export function ExportBackup(): $CancellablePromise<boolean> {
@@ -54,6 +66,10 @@ export function ImportRouteSets(): $CancellablePromise<string> {
 
 export function ImportYAML(): $CancellablePromise<string> {
     return $Call.ByID(1395516998);
+}
+
+export function InstallAppUpdate(): $CancellablePromise<void> {
+    return $Call.ByID(3166738271);
 }
 
 export function InstallCore(): $CancellablePromise<string> {

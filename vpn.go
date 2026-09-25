@@ -13,6 +13,7 @@ type VPN struct {
 	manager *core.Manager
 	app     *application.App
 	window  *application.WebviewWindow
+	updates *appUpdateManager
 }
 
 func encoded(v any) (string, error)        { b, e := json.Marshal(v); return string(b), e }

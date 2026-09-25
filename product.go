@@ -10,10 +10,12 @@ var productFiles embed.FS
 var product = loadProduct()
 
 func loadProduct() struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
 } {
 	var p struct {
-		Name string `json:"name"`
+		Name    string `json:"name"`
+		Version string `json:"version"`
 	}
 	data, err := productFiles.ReadFile("frontend/product.json")
 	if err != nil {
