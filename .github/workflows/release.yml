@@ -89,13 +89,18 @@ jobs:
       - name: Install NSIS
         if: runner.os == 'Windows'
         shell: pwsh
+        run: ./scripts/setup-nsis.ps1
+      - name: Build Windows application and installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if (-not (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe')) {
-            choco install nsis --yes --no-progress
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
-          'C:\Program Files (x86)\NSIS' | Out-File -FilePath $env:GITHUB_PATH -Append
-      - name: Build application and installer
+          ./scripts/setup-nsis.ps1 -SkipInstall
+          node scripts/package.mjs windows ${{ matrix.arch }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build macOS application and installer
+        if: runner.os == 'macOS'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/package.mjs ${{ matrix.os }} ${{ matrix.arch }}
