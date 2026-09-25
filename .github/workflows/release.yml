@@ -96,6 +96,8 @@ jobs:
           }
           'C:\Program Files (x86)\NSIS' | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Build application and installer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/package.mjs ${{ matrix.os }} ${{ matrix.arch }}
       - name: Package Windows
         if: runner.os == 'Windows'

@@ -18,6 +18,38 @@ import (
 
 const BundledVersion = "v1.19.30"
 
+const bundleReleaseAPIURL = "https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/" + BundledVersion
+
+// GitHub's build token is sent only to the single release metadata endpoint.
+// Clone the request so net/http cannot copy this header to asset redirects.
+type bundleReleaseAuthTransport struct {
+	base  http.RoundTripper
+	token string
+}
+
+func (t bundleReleaseAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.token != "" && req.URL.String() == bundleReleaseAPIURL {
+		authenticated := req.Clone(req.Context())
+		authenticated.Header.Set("Authorization", "Bearer "+t.token)
+		return t.base.RoundTrip(authenticated)
+	}
+	return t.base.RoundTrip(req)
+}
+
+func bundleHTTPClient(token string) *http.Client {
+	client := &http.Client{
+		Timeout:   4 * time.Minute,
+		Transport: bundleReleaseAuthTransport{base: http.DefaultTransport, token: token},
+	}
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if req.URL.Scheme != "https" || len(via) > 8 {
+			return fmt.Errorf("Недопустимый redirect")
+		}
+		return nil
+	}
+	return client
+}
+
 func HasBundledCore() bool {
 	_, e := bundled.Files.ReadFile("payload/" + runtime.GOOS + "-" + runtime.GOARCH + ".json")
 	return e == nil
@@ -103,20 +135,14 @@ func PrepareBundle(ctx context.Context, dir, platform, arch string) error {
 			}
 		}
 	}
-	client := &http.Client{Timeout: 4 * time.Minute}
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		if req.URL.Scheme != "https" || len(via) > 8 {
-			return fmt.Errorf("Недопустимый redirect")
-		}
-		return nil
-	}
-	data, e := get(ctx, client, "https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/"+BundledVersion, 2<<20)
+	client := bundleHTTPClient(os.Getenv("GITHUB_TOKEN"))
+	data, e := get(ctx, client, bundleReleaseAPIURL, 2<<20)
 	if e != nil {
-		return e
+		return fmt.Errorf("Mihomo release metadata: %w", e)
 	}
 	var release Release
 	if e = json.Unmarshal(data, &release); e != nil {
-		return e
+		return fmt.Errorf("Mihomo release metadata: %w", e)
 	}
 	var asset Asset
 	for _, a := range release.Assets {
@@ -127,15 +153,15 @@ func PrepareBundle(ctx context.Context, dir, platform, arch string) error {
 	}
 	expected := "https://github.com/MetaCubeX/mihomo/releases/download/" + BundledVersion + "/" + name
 	if asset.URL != expected {
-		return fmt.Errorf("Официальный asset не найден")
+		return fmt.Errorf("Mihomo release asset: официальный asset не найден")
 	}
 	data, e = get(ctx, client, asset.URL, maxBinary)
 	if e != nil {
-		return e
+		return fmt.Errorf("Mihomo asset download: %w", e)
 	}
 	bin, e := unpack(asset, data)
 	if e != nil {
-		return e
+		return fmt.Errorf("Mihomo asset verification: %w", e)
 	}
 	sum := sha256.Sum256(bin)
 	info := BundleManifest{BundledVersion, hex.EncodeToString(sum[:]), platform, arch}
@@ -149,7 +175,7 @@ func PrepareBundle(ctx context.Context, dir, platform, arch string) error {
 	}
 	license, e := get(ctx, client, "https://raw.githubusercontent.com/MetaCubeX/mihomo/"+BundledVersion+"/LICENSE", 1<<20)
 	if e != nil {
-		return e
+		return fmt.Errorf("Mihomo LICENSE download: %w", e)
 	}
 	if e = atomicWrite(filepath.Join(dir, "LICENSE-mihomo.txt"), license, 0644); e != nil {
 		return e
