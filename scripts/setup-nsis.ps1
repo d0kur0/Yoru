@@ -16,9 +16,18 @@ function Find-NSIS {
 
 $nsisExecutable = Find-NSIS
 if (-not $nsisExecutable -and -not $SkipInstall) {
-    choco install nsis --yes --no-progress
-    if ($LASTEXITCODE -ne 0) { throw "NSIS installation failed: $LASTEXITCODE" }
-    $nsisExecutable = Find-NSIS
+    # Chocolatey may report success even when its package feed returned 504.
+    # Check the executable after every attempt, not only the command exit code.
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        choco install nsis --yes --no-progress --force
+        $installExitCode = $LASTEXITCODE
+        $nsisExecutable = Find-NSIS
+        if ($nsisExecutable) { break }
+        if ($attempt -lt 3) {
+            Write-Warning "NSIS is still missing after attempt $attempt (Chocolatey exit $installExitCode); retrying."
+            Start-Sleep -Seconds (10 * $attempt)
+        }
+    }
 }
 if (-not $nsisExecutable) { throw 'NSIS installation did not provide makensis.exe in PATH or either Program Files directory.' }
 
