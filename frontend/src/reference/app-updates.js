@@ -4,7 +4,7 @@ export function updatePresentation(state, current) {
  case 'checking':return {text:'Проверяем новые версии…',label:'Проверяем…',disabled:true};
  case 'available':return {text:`Доступна версия ${version}`,label:'Скачать обновление',action:'download'};
  case 'downloading':return {text:state.total>0?`Загрузка ${Math.min(100,Math.floor(state.downloaded/state.total*100))}%`:'Загружаем обновление…',label:'Загрузка…',disabled:true};
- case 'ready':return {text:`Версия ${version} загружена и проверена`,label:state.platform==='darwin'?'Открыть установщик':'Установить и выйти',action:'install'};
+ case 'ready':return {text:`Версия ${version} загружена и проверена`,label:state.platform==='darwin'?'Открыть установщик':'Установить и перезапустить',action:'install'};
  case 'installing':return {text:'Открываем установщик…',label:'Установка…',disabled:true};
  case 'current':return {text:'Установлена актуальная версия',label:'Проверить снова',action:'check'};
  case 'error':return {text:state.error||'Не удалось проверить обновления',label:'Повторить',action:'check'};
@@ -32,7 +32,7 @@ export function createAppUpdates({api,current,esc,row,showModal,toast,beforeInst
   const button=event.target.closest('[data-app-update]');if(!button||pending)return;
   if(button.dataset.appUpdate==='install'){
    const mac=state.platform==='darwin';
-   showModal(`Установить Yoru ${esc(state.version)}?`,mac?'Откроется образ установщика.':'Приложение закроется для установки обновления.',`<p class="delete-text">Текущее VPN-подключение будет остановлено. ${mac?'Перенесите Yoru в «Программы», подтвердите замену и запустите приложение.':'После установки запустите Yoru из установщика.'} Настройки сохранятся.</p>`,async()=>{await beforeInstall();try{await api.InstallAppUpdate();}catch(error){state=JSON.parse(await api.AppUpdateStatus());render();throw error;}},mac?'Открыть и выйти':'Установить и выйти');
+   showModal(`Установить Yoru ${esc(state.version)}?`,mac?'Откроется образ установщика.':'Yoru установит обновление и запустится снова.',`<p class="delete-text">Текущее VPN-подключение будет остановлено. ${mac?'Перенесите Yoru в «Программы», подтвердите замену и запустите приложение.':'Установка пройдёт без мастера настройки. Yoru запустится автоматически; подключение при запуске — по вашим настройкам.'} Настройки сохранятся.</p>`,async()=>{await beforeInstall();try{await api.InstallAppUpdate();}catch(error){state=JSON.parse(await api.AppUpdateStatus());render();throw error;}},mac?'Открыть и выйти':'Обновить и перезапустить');
   }else void run(button.dataset.appUpdate==='download'?'DownloadAppUpdate':'CheckAppUpdate');
  });
  return {

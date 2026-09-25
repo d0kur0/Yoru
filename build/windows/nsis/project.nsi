@@ -74,7 +74,14 @@ ManifestDPIAware true
 #!finalize 'signtool --file "%1"'
 
 Name "${INFO_PRODUCTNAME}"
-OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
+!ifdef YORU_UPDATE_SMOKE
+    # The opt-in installer smoke test writes only into its temporary directory.
+    OutFile "${YORU_UPDATE_SMOKE}\installer.exe"
+    !define YORU_UPDATE_WAIT_MS 500
+!else
+    OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
+    !define YORU_UPDATE_WAIT_MS 120000
+!endif
 !if "${WAILS_INSTALL_SCOPE}" == "user"
     InstallDir "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
 !else
@@ -91,6 +98,15 @@ Function .onInit
    ${GetOptions} $0 "/UPDATEPID=" $UpdatePID
    IfErrors done
 
+   # /UPDATEPID is emitted only by Yoru's updater. It is also supported by
+   # older Yoru releases that do not pass /S, so upgrades stay wizard-free.
+   SetSilent silent
+   IntFmt $1 "%d" $UpdatePID
+   StrCmp $1 $UpdatePID normalizedUpdatePID invalidUpdatePID
+   normalizedUpdatePID:
+   IntCmp $1 0 invalidUpdatePID invalidUpdatePID validUpdatePID
+   validUpdatePID:
+
    # Open the process immediately to avoid waiting on a recycled PID later.
    # SYNCHRONIZE is enough; the installer never terminates a process.
    System::Call 'kernel32::OpenProcess(i 0x00100000, i 0, i $UpdatePID) p .r0 ?e'
@@ -105,7 +121,7 @@ Function .onInit
        ${EndIf}
    ${Else}
        # WAIT_OBJECT_0 = 0. A hung shutdown must not trigger file replacement.
-       System::Call 'kernel32::WaitForSingleObject(p r0, i 120000) i .r1'
+       System::Call 'kernel32::WaitForSingleObject(p r0, i ${YORU_UPDATE_WAIT_MS}) i .r1'
        System::Call 'kernel32::CloseHandle(p r0)'
        ${If} $1 != 0
            IfSilent +2
@@ -114,27 +130,70 @@ Function .onInit
            Abort
        ${EndIf}
    ${EndIf}
+   Goto done
+   invalidUpdatePID:
+       SetErrorLevel 66
+       Abort
    done:
 FunctionEnd
 
 Section
     !insertmacro wails.setShellContext
 
+    !ifndef YORU_UPDATE_SMOKE
+    ClearErrors
     !insertmacro wails.webview2runtime
+    IfErrors installFailed
+    !endif
 
+    ClearErrors
     SetOutPath $INSTDIR
+    IfErrors installFailed
 
+    ClearErrors
     !insertmacro wails.files
+    IfErrors installFailed
+    IfFileExists "$INSTDIR\Yoru.exe" filesReady installFailed
+    filesReady:
 
-
+    !ifndef YORU_UPDATE_SMOKE
+    ClearErrors
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    IfErrors installFailed
+    ClearErrors
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    IfErrors installFailed
 
+    ClearErrors
     !insertmacro wails.associateFiles
     !insertmacro wails.associateCustomProtocols
+    IfErrors installFailed
 
+    ClearErrors
     !insertmacro wails.writeUninstaller
+    IfErrors installFailed
+    !endif
+    Goto installDone
+
+    installFailed:
+        SetErrorLevel 68
+        Abort
+    installDone:
 SectionEnd
+
+Function .onInstSuccess
+    # Silent and manual installs without /UPDATEPID never start Yoru here.
+    StrCmp $UpdatePID "" done
+    IfFileExists "$INSTDIR\Yoru.exe" launchReady relaunchFailed
+    launchReady:
+    ClearErrors
+    ExecShell "open" "$INSTDIR\Yoru.exe"
+    IfErrors relaunchFailed
+    Goto done
+    relaunchFailed:
+        SetErrorLevel 69
+    done:
+FunctionEnd
 
 Section "uninstall"
     !insertmacro wails.setShellContext

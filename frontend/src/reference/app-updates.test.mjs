@@ -21,3 +21,7 @@ test('failure provides an explicit retry and visible reason',()=>{
  assert.equal(view.text,'Нет сети');
  assert.equal(view.action,'check');
 });
+
+test('Windows explicitly offers automatic relaunch after installation',()=>{
+ assert.equal(updatePresentation({phase:'ready',platform:'windows',version:'1.3.2'},'1.3.1').label,'Установить и перезапустить');
+});

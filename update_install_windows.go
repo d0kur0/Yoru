@@ -61,7 +61,8 @@ func windowsInstallerParameters(executable string, pid int) (string, error) {
 	if strings.ContainsAny(dir, "\x00\r\n\"") || dir == filepath.VolumeName(dir)+`\` {
 		return "", errors.New("invalid installation directory")
 	}
-	// NSIS requires /D to be the final, unquoted argument. It consumes the
-	// remainder of the command line, including spaces in the directory name.
-	return fmt.Sprintf("/UPDATEPID=%d /D=%s", pid, dir), nil
+	// /UPDATEPID also makes the installer wait for this process and relaunch the
+	// installed Yoru.exe on success. /S avoids the wizard on older installers;
+	// /D must be the final, unquoted NSIS argument (including spaces).
+	return fmt.Sprintf("/S /UPDATEPID=%d /D=%s", pid, dir), nil
 }
