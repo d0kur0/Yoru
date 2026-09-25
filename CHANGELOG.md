@@ -1,3 +1,23 @@
+## [1.3.0](https://github.com/d0kur0/Yoru/compare/v1.2.1...v1.3.0) (2026-09-25)
+
+### Features
+
+* check and install application updates ([1956efd](https://github.com/d0kur0/Yoru/commit/1956efdeb93a5e7a4daa4c5704ac35f416be411c))
+
+### Bug Fixes
+
+* authenticate bundled core metadata in CI ([4549237](https://github.com/d0kur0/Yoru/commit/454923793092c2b90e57fee6d5706406d9773076))
+* preserve TUN when switching VPN servers ([f829623](https://github.com/d0kur0/Yoru/commit/f829623e85cb14f807eb5c6d8ebdfb2fd5d65e9e))
+* resolve NSIS path before Windows packaging ([cc6d820](https://github.com/d0kur0/Yoru/commit/cc6d82015d3352016579d0ed8d1b34b586f97f01))
+* retry incomplete NSIS installation in CI ([f659b83](https://github.com/d0kur0/Yoru/commit/f659b83c12c0ae04e237b92fbcf407f217d3f4b0))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.2.1](https://github.com/d0kur0/Yoru/compare/v1.2.0...v1.2.1) (2026-09-22)
 
 ### Bug Fixes
