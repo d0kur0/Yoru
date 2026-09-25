@@ -1,3 +1,16 @@
+## [1.3.1](https://github.com/d0kur0/Yoru/compare/v1.3.0...v1.3.1) (2026-09-25)
+
+### Bug Fixes
+
+* apply live proxy edits and clarify connection checks ([832b2fb](https://github.com/d0kur0/Yoru/commit/832b2fb3ccd58e47ef394ff6c5727a784d1f5d74))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.3.0](https://github.com/d0kur0/Yoru/compare/v1.2.1...v1.3.0) (2026-09-25)
 
 ### Features
