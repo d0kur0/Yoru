@@ -1,3 +1,16 @@
+## [1.4.0](https://github.com/d0kur0/Yoru/compare/v1.3.2...v1.4.0) (2026-09-27)
+
+### Features
+
+* unify routing rules and sets in one priority list ([108ba77](https://github.com/d0kur0/Yoru/commit/108ba775d01fe92e034fc18e89f03a9c8d28db75))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.3.2](https://github.com/d0kur0/Yoru/compare/v1.3.1...v1.3.2) (2026-09-25)
 
 ### Bug Fixes
