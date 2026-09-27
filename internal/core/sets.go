@@ -128,14 +128,22 @@ func appendUnique(dst []string, values ...string) []string {
 	return dst
 }
 func (c Config) expanded() Config {
-	c.Rules = append([]Rule{}, c.Rules...)
+	c.normalize()
+	rulesByID := make(map[string]Rule, len(c.Rules))
+	for _, r := range c.Rules {
+		rulesByID[r.ID] = r
+	}
+	setsByID := make(map[string]RouteSet, len(c.Sets))
+	for _, s := range c.Sets {
+		setsByID[s.ID] = s
+	}
 	c.DNS.Policies = append([]Policy{}, c.DNS.Policies...)
 	c.DNS.Exclusions = append([]string{}, c.DNS.Exclusions...)
 	c.Settings.RouteExclusions = append([]string{}, c.Settings.RouteExclusions...)
-	generated := []Rule{}
-	for _, s := range c.Sets {
+	ordered := make([]Rule, 0, len(c.Rules))
+	appendSet := func(s RouteSet) {
 		if !s.Enabled {
-			continue
+			return
 		}
 		for _, d := range s.Domains {
 			typ := "DOMAIN"
@@ -144,7 +152,7 @@ func (c Config) expanded() Config {
 				typ = "DOMAIN-SUFFIX"
 				value = d[2:]
 			}
-			generated = append(generated, Rule{Type: typ, Value: value, Action: s.Action})
+			ordered = append(ordered, Rule{Type: typ, Value: value, Action: s.Action})
 			for _, dns := range s.Resolvers {
 				exists := false
 				for _, p := range c.DNS.Policies {
@@ -161,21 +169,21 @@ func (c Config) expanded() Config {
 			}
 		}
 		for _, keyword := range s.Keywords {
-			generated = append(generated, Rule{Type: "DOMAIN-KEYWORD", Value: keyword, Action: s.Action})
+			ordered = append(ordered, Rule{Type: "DOMAIN-KEYWORD", Value: keyword, Action: s.Action})
 		}
 		for _, p := range s.Processes {
 			typ := "PROCESS-NAME"
 			if strings.ContainsAny(p, "/\\") {
 				typ = "PROCESS-PATH"
 			}
-			generated = append(generated, Rule{Type: typ, Value: p, Action: s.Action})
+			ordered = append(ordered, Rule{Type: typ, Value: p, Action: s.Action})
 		}
 		for _, cidr := range s.CIDRs {
 			typ := "IP-CIDR"
 			if strings.Contains(cidr, ":") {
 				typ = "IP-CIDR6"
 			}
-			generated = append(generated, Rule{Type: typ, Value: cidr, Action: s.Action, NoResolve: true})
+			ordered = append(ordered, Rule{Type: typ, Value: cidr, Action: s.Action, NoResolve: true})
 			if s.BypassTUN {
 				c.Settings.RouteExclusions = appendUnique(c.Settings.RouteExclusions, cidr)
 			}
@@ -198,7 +206,19 @@ func (c Config) expanded() Config {
 			}
 		}
 	}
-	c.Rules = append(generated, c.Rules...)
+	for _, ref := range c.RouteOrder {
+		switch ref.Kind {
+		case "set":
+			if s, ok := setsByID[ref.ID]; ok {
+				appendSet(s)
+			}
+		case "rule":
+			if r, ok := rulesByID[ref.ID]; ok {
+				ordered = append(ordered, r)
+			}
+		}
+	}
+	c.Rules = ordered
 	return c
 }
 

@@ -37,7 +37,7 @@ func (m *Manager) SaveLive(parent context.Context, c Config) error {
 	proxyChanged := c.Settings.SystemProxy != m.config.Settings.SystemProxy
 	groupChanged := c.Selected != m.config.Selected || !reflect.DeepEqual(c.OrderedServerIDs(), m.config.OrderedServerIDs()) || !reflect.DeepEqual(c.proxyGroups(nil), m.config.proxyGroups(nil))
 	proxiesChanged := !sameServerProxies(c.Servers, m.config.Servers)
-	routingChanged := groupChanged || proxiesChanged || !reflect.DeepEqual(c.Settings.RouteExclusions, m.config.Settings.RouteExclusions) || !reflect.DeepEqual(c.TUNOptions, m.config.TUNOptions) || !reflect.DeepEqual(c.Rules, m.config.Rules) || !reflect.DeepEqual(c.Sets, m.config.Sets) || !reflect.DeepEqual(c.DNS, m.config.DNS) || c.DefaultAction != m.config.DefaultAction || c.Settings.Sniffer != m.config.Settings.Sniffer || c.Settings.IPv6 != m.config.Settings.IPv6
+	routingChanged := groupChanged || proxiesChanged || !reflect.DeepEqual(c.Settings.RouteExclusions, m.config.Settings.RouteExclusions) || !reflect.DeepEqual(c.TUNOptions, m.config.TUNOptions) || !reflect.DeepEqual(c.Rules, m.config.Rules) || !reflect.DeepEqual(c.Sets, m.config.Sets) || !reflect.DeepEqual(c.RouteOrder, m.config.RouteOrder) || !reflect.DeepEqual(c.DNS, m.config.DNS) || c.DefaultAction != m.config.DefaultAction || c.Settings.Sniffer != m.config.Settings.Sniffer || c.Settings.IPv6 != m.config.Settings.IPv6
 	if m.process != nil && routingChanged {
 		if tunChanged {
 			return errors.New("Измените режим TUN отдельно от правил маршрутизации")

@@ -1,4 +1,5 @@
-export const emptyConfig = () => ({sets:[],logging:{enabled:true,level:'info',maxSizeMB:5,files:5,days:7},tunOptions:{stack:'',mtu:0,interface:''},servers:[],selected:'',rules:[],subscriptions:[],dns:{bootstrap:['1.1.1.1','9.9.9.9'],nodeResolvers:[],directResolvers:[],respectRules:false,enabled:true,mode:'fake-ip',servers:['https://dns.quad9.net/dns-query'],fallback:[],exclusions:['+.lan','+.local','localhost'],policies:[],hijack:true,ipv6:false},settings:{tun:true,systemProxy:false,mode:'rule',autostart:false,minimized:false,autoConnect:false,tray:true,sniffer:true,ipv6:false,routeExclusions:['192.168.0.0/16','10.0.0.0/8','172.16.0.0/12']},defaultAction:'DIRECT'});
+import {normalizeRouteIds, normalizeRouteOrder} from './route-order.js';
+export const emptyConfig = () => ({sets:[],routeOrder:[],logging:{enabled:true,level:'info',maxSizeMB:5,files:5,days:7},tunOptions:{stack:'',mtu:0,interface:''},servers:[],selected:'',rules:[],subscriptions:[],dns:{bootstrap:['1.1.1.1','9.9.9.9'],nodeResolvers:[],directResolvers:[],respectRules:false,enabled:true,mode:'fake-ip',servers:['https://dns.quad9.net/dns-query'],fallback:[],exclusions:['+.lan','+.local','localhost'],policies:[],hijack:true,ipv6:false},settings:{tun:true,systemProxy:false,mode:'rule',autostart:false,minimized:false,autoConnect:false,tray:true,sniffer:true,ipv6:false,routeExclusions:['192.168.0.0/16','10.0.0.0/8','172.16.0.0/12']},defaultAction:'DIRECT'});
 
 export function bytes(value) {
   const n=Number(value)||0;
@@ -19,5 +20,7 @@ export function decodeBackup(data) {
   if(!data||!['mihomo-desktop','mihomo-desktop-prototype'].includes(data.format)||data.version!==1)throw Error('Нужен файл настроек Mihomo Desktop версии 1.');
   const c=data.config;
   if(!c||!Array.isArray(c.servers)||!Array.isArray(c.rules)||!Array.isArray(c.subscriptions)||!c.dns||!c.settings)throw Error('В файле отсутствуют обязательные настройки.');
-  return structuredClone(c);
+  const restored=normalizeRouteIds(structuredClone(c));
+  restored.routeOrder=normalizeRouteOrder(restored);
+  return restored;
 }

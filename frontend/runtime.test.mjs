@@ -18,4 +18,11 @@ test('backup preserves credentials and produces an independent copy',()=>{
  assert.deepEqual(restored,c);restored.servers[0].secret='changed';assert.equal(c.servers[0].secret,'test-key');
  assert.throws(()=>decodeBackup({format:'unknown',version:1,config:c}));
 });
+test('legacy backup retains all route rows and puts sets before rules',()=>{
+ const c=emptyConfig();delete c.routeOrder;
+ c.sets=[{id:'work'}];c.rules=[{id:'r1',value:'one'},{id:'r1',value:'two'}];
+ const restored=decodeBackup({format:'mihomo-desktop',version:1,config:c});
+ assert.deepEqual(restored.routeOrder,[{kind:'set',id:'work'},{kind:'rule',id:'r1'},{kind:'rule',id:'legacy-rule-1'}]);
+ assert.equal(restored.rules[1].value,'two');
+});
 test('byte formatting uses measured values',()=>{assert.equal(bytes(0),'0 Б');assert.equal(bytes(1024),'1.0 КБ');});

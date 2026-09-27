@@ -131,7 +131,7 @@ func (v *VPN) ImportRouteSets() (string, error) {
 
 // An empty id exports every routing set, preserving their order.
 func (v *VPN) ExportRouteSets(id string) (bool, error) {
-	sets := v.manager.Config().Sets
+	sets := v.manager.Config().OrderedRouteSets()
 	if id != "" {
 		found := false
 		for _, set := range sets {

@@ -47,6 +47,12 @@ type Rule struct {
 	Value     string `json:"value"`
 	Action    string `json:"action"`
 }
+
+// RouteRef identifies one slot in the first-match routing priority list.
+type RouteRef struct {
+	Kind string `json:"kind"`
+	ID   string `json:"id"`
+}
 type Subscription struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -96,6 +102,7 @@ type Settings struct {
 }
 type Config struct {
 	Sets          []RouteSet     `json:"sets"`
+	RouteOrder    []RouteRef     `json:"routeOrder"`
 	Logging       *LogSettings   `json:"logging"`
 	TUNOptions    TUNOptions     `json:"tunOptions"`
 	Revision      uint64         `json:"revision"`
@@ -149,6 +156,59 @@ func (c *Config) normalize() {
 	if c.Rules == nil {
 		c.Rules = []Rule{}
 	}
+	// A legacy rule without an ID needs a persistent identity before it can be
+	// referenced in the mixed order. Reserve explicit IDs first to avoid collisions.
+	c.Rules = append([]Rule{}, c.Rules...)
+	reserved := make(map[string]bool, len(c.Rules))
+	for _, r := range c.Rules {
+		if r.ID != "" {
+			reserved[r.ID] = true
+		}
+	}
+	used := make(map[string]bool, len(c.Rules))
+	nextID := 1
+	for i := range c.Rules {
+		id := c.Rules[i].ID
+		if id == "" || used[id] {
+			for {
+				id = fmt.Sprintf("legacy-rule-%d", nextID)
+				nextID++
+				if !reserved[id] {
+					break
+				}
+			}
+			c.Rules[i].ID = id
+			reserved[id] = true
+		}
+		used[id] = true
+	}
+	available := make(map[RouteRef]bool, len(c.Sets)+len(c.Rules))
+	for _, s := range c.Sets {
+		if s.ID != "" {
+			available[RouteRef{"set", s.ID}] = true
+		}
+	}
+	for _, r := range c.Rules {
+		available[RouteRef{"rule", r.ID}] = true
+	}
+	order := make([]RouteRef, 0, len(available))
+	seen := make(map[RouteRef]bool, len(available))
+	appendRef := func(ref RouteRef) {
+		if available[ref] && !seen[ref] {
+			order = append(order, ref)
+			seen[ref] = true
+		}
+	}
+	for _, ref := range c.RouteOrder {
+		appendRef(ref)
+	}
+	for _, s := range c.Sets {
+		appendRef(RouteRef{"set", s.ID})
+	}
+	for _, r := range c.Rules {
+		appendRef(RouteRef{"rule", r.ID})
+	}
+	c.RouteOrder = order
 	if c.Subscriptions == nil {
 		c.Subscriptions = []Subscription{}
 	}

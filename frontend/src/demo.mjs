@@ -27,9 +27,16 @@ config.sets = [
   { id: 'media', name: 'Сервисы и приложения', enabled: true, action: 'PROXY', domains: ['+.openai.com', '+.github.com', '+.discord.com'], keywords: [], resolvers: [], cidrs: [], processes: ['Discord.exe'], realIP: false, bypassTUN: false },
 ];
 config.rules = [
-  { id: 'r1', type: 'PROCESS-NAME', value: 'Discord.exe', action: 'PROXY', enabled: true },
-  { id: 'r2', type: 'DOMAIN-SUFFIX', value: 'github.com', action: 'PROXY', enabled: true },
-  { id: 'r3', type: 'DOMAIN-SUFFIX', value: 'company.example', action: 'DIRECT', enabled: true },
+  { id: 'r1', type: 'PROCESS-NAME', value: 'chrome.exe', action: 'PROXY' },
+  { id: 'r2', type: 'DOMAIN-SUFFIX', value: 'portal.company.example', action: 'DIRECT' },
+  { id: 'r3', type: 'DOMAIN-SUFFIX', value: 'unwanted.example', action: 'REJECT' },
+];
+config.routeOrder = [
+  { kind: 'rule', id: 'r2' },
+  { kind: 'set', id: 'work' },
+  { kind: 'rule', id: 'r1' },
+  { kind: 'set', id: 'media' },
+  { kind: 'rule', id: 'r3' },
 ];
 const rows = [
   ['chrome.exe', 'chatgpt.com', 'PROXY', 18400000, 430000],

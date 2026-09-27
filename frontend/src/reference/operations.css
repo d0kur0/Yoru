@@ -421,6 +421,28 @@ dialog:has(.route-set-import){width:min(900px,calc(100vw - 40px));max-width:calc
 .route-set-preview dt{color:var(--muted)}.route-set-preview dd{margin:0;font-weight:400;overflow-wrap:anywhere}
 
 .routing-apply-status{font-size:12px;line-height:1.5;color:var(--muted);margin:12px 0 18px}
+.route-list-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.route-list-actions .button.primary{margin-right:4px}
+.route-list{width:100%;min-width:0}
+.route-list .server-table{width:100%;min-width:650px;table-layout:fixed}
+.route-list th:first-child{width:112px}.route-list th:nth-child(2){width:36%}.route-list th:nth-child(3){width:23%}.route-list th:last-child{width:186px;text-align:right}
+.route-list td{vertical-align:middle;min-width:0;overflow-wrap:anywhere}
+.route-list .table-actions{justify-content:flex-end;gap:3px;flex-wrap:nowrap}
+.route-list .rule-order{white-space:nowrap}
+.route-kind{font-size:11px;font-weight:650;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+.route-condition{font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.route-detail{line-height:1.45}
+.route-row.inactive .route-condition,.route-row.inactive .rule-action{opacity:.52}
+.route-row.inactive .route-kind{color:var(--muted)}
+.route-match{background:color-mix(in srgb,var(--accent) 5%,var(--card))}
+.route-match td:first-child{font-size:12px;color:var(--muted)}
+.route-empty{padding:15px 17px;margin-bottom:14px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:13px;line-height:1.5;color:var(--muted)}
+.route-outside-note{margin:14px 0 22px;color:var(--muted);font-size:12px;line-height:1.55}
+.route-network-details{margin:26px 0 12px;border-top:1px solid var(--line);padding-top:18px}
+.route-network-details>summary{cursor:pointer;color:var(--text);font-size:13px;font-weight:600;list-style-position:inside}
+.route-network-details>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.route-network-details .rules-network{margin:16px 0 0}
+@media(max-width:900px){.route-list .server-table{min-width:650px}.route-list-actions .button{font-size:12px}}
 .rules-tab-footer{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 0;background:var(--bg);z-index:2;border-top:1px solid var(--line)}
 .set-editor .set-tabs{margin:16px 0 0;overflow-x:auto;flex-wrap:nowrap}
 .set-editor .set-tabs button{white-space:nowrap;font-size:13px;padding:10px 12px}
@@ -503,3 +525,14 @@ dialog:has(.set-editor) .modal-head p{max-width:75ch}
  .server-latency-help,.server-sub,.routing-help,.dns-input-help{font-size:13px;line-height:1.6}
  .server-latency-help{margin:18px 0 10px;max-width:90ch}
 }
+/* Keep five mixed routes and MATCH visible in the standard 1160×760 window. */
+#main[data-page=rules]{padding-top:18px}
+.rules-workspace .page-heading{margin-bottom:8px}
+.rules-workspace .routing-apply-status{margin:0 0 5px}
+.rules-workspace .rule-hint{margin-bottom:8px;line-height:1.4}
+.rules-workspace .route-list-actions{margin-bottom:8px}
+.rules-workspace .route-list .server-table td{padding:7px 12px}
+.rules-workspace .route-list .server-table th{padding:8px 12px}
+.route-list .route-kind{display:inline;margin:0;font-size:11px}
+.route-list .route-detail,.route-list .route-meta{line-height:1.35}
+.route-list .route-condition{line-height:1.3}

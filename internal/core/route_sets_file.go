@@ -21,6 +21,22 @@ type RouteSetsFile struct {
 
 const routeSetsFormat = "yoru-route-sets"
 
+// OrderedRouteSets preserves the visible relative priority in portable exports.
+func (c Config) OrderedRouteSets() []RouteSet {
+	c.normalize()
+	byID := make(map[string]RouteSet, len(c.Sets))
+	for _, set := range c.Sets {
+		byID[set.ID] = set
+	}
+	ordered := make([]RouteSet, 0, len(c.Sets))
+	for _, ref := range c.RouteOrder {
+		if ref.Kind == "set" {
+			ordered = append(ordered, byID[ref.ID])
+		}
+	}
+	return ordered
+}
+
 func DecodeRouteSets(data []byte) ([]RouteSet, error) {
 	if len(data) > 1<<20 {
 		return nil, errors.New("Файл наборов больше 1 МБ")
