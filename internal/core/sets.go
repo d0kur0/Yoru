@@ -191,9 +191,12 @@ func (c Config) expanded() Config {
 		if s.BypassTUN {
 			for _, dns := range s.Resolvers {
 				host := dns
-				if u, e := url.Parse(dns); e == nil && u.Hostname() != "" {
+				if base, _, tagged := strings.Cut(host, "#"); tagged {
+					host = base
+				}
+				if u, e := url.Parse(host); e == nil && u.Hostname() != "" {
 					host = u.Hostname()
-				} else if h, _, e := net.SplitHostPort(dns); e == nil {
+				} else if h, _, e := net.SplitHostPort(host); e == nil {
 					host = h
 				}
 				if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() {

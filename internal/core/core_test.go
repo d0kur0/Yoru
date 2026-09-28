@@ -63,6 +63,44 @@ func TestConfigCompilesCompleteRouting(t *testing.T) {
 		t.Fatal(tun)
 	}
 }
+func TestRouteSetDNSInterfaceKeepsCiscoRouteExclusion(t *testing.T) {
+	c := validConfig()
+	c.Sets = []RouteSet{{
+		ID: "work", Name: "Cisco", Enabled: true, Domains: []string{"+.corp.example"},
+		Action: "DIRECT", Resolvers: []string{"192.168.59.13#Ethernet 2", "192.168.59.14#Ethernet 2"},
+		RealIP: true, BypassTUN: true,
+	}}
+	b, err := c.YAML("127.0.0.1:45001", "secret", 45002)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := yaml.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+	dns := got["dns"].(map[string]any)
+	servers := dns["nameserver-policy"].(map[string]any)["+.corp.example"].([]any)
+	if servers[0] != "192.168.59.13#Ethernet 2" || servers[1] != "192.168.59.14#Ethernet 2" {
+		t.Fatalf("DNS interface binding was lost: %v", servers)
+	}
+	routes := got["tun"].(map[string]any)["route-exclude-address"].([]any)
+	for _, want := range []string{"192.168.59.13/32", "192.168.59.14/32"} {
+		found := false
+		for _, route := range routes {
+			found = found || route == want
+		}
+		if !found {
+			t.Fatalf("missing %s from TUN exclusions: %v", want, routes)
+		}
+	}
+}
+func TestResolverInterfaceRejectsMalformedSuffix(t *testing.T) {
+	for _, server := range []string{"192.168.59.13#", "192.168.59.13# Ethernet 2", "192.168.59.13#Ethernet 2 ", "192.168.59.13#Ethernet 2,PROXY", "192.168.59.13#Ethernet 2\nMATCH,PROXY"} {
+		if resolver(server) {
+			t.Fatalf("accepted invalid DNS interface: %q", server)
+		}
+	}
+}
 func TestConfigRejectsBrokenInput(t *testing.T) {
 	for name, mutate := range map[string]func(*Config){
 		"rule injection": func(c *Config) {

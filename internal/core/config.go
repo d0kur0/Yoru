@@ -234,6 +234,11 @@ func resolver(s string) bool {
 	if net.ParseIP(s) != nil {
 		return true
 	}
+	// Mihomo allows a DNS server to be pinned to a network interface with
+	// "#<interface>". Windows interface aliases can contain spaces.
+	if host, iface, tagged := strings.Cut(s, "#"); tagged && net.ParseIP(host) != nil {
+		return iface != "" && strings.TrimSpace(iface) == iface && !strings.ContainsAny(iface, "#,&\r\n\t")
+	}
 	if h, p, err := net.SplitHostPort(s); err == nil && net.ParseIP(h) != nil {
 		port, e := strconv.Atoi(p)
 		return e == nil && port > 0 && port <= 65535
