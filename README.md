@@ -17,7 +17,7 @@
 
 Yoru — desktop-клиент для [Mihomo](https://github.com/MetaCubeX/mihomo). Подключайте свои серверы и подписки, выбирайте маршрут для приложений и доменов, настраивайте DNS и смотрите активные соединения. Ядро уже включено в установщик.
 
-![Статус подключения и трафик](docs/screenshots/status.jpg)
+![Статус подключения и трафик](docs/screenshots/status.png)
 
 ## Что умеет
 
@@ -68,21 +68,21 @@ Yoru — desktop-клиент для [Mihomo](https://github.com/MetaCubeX/mihom
 <details open>
 <summary><b>Серверы — протоколы, источники подписок и задержка</b></summary>
 
-![Список серверов](docs/screenshots/servers.jpg)
+![Список серверов](docs/screenshots/servers.png)
 
 </details>
 
 <details>
 <summary><b>Правила — единый порядок маршрутизации</b></summary>
 
-![Наборы и правила маршрутизации](docs/screenshots/rules.jpg)
+![Наборы и правила маршрутизации](docs/screenshots/rules.png)
 
 </details>
 
 <details>
 <summary><b>Соединения — приложения, маршруты и трафик</b></summary>
 
-![Активные соединения](docs/screenshots/connections.jpg)
+![Активные соединения](docs/screenshots/connections.png)
 
 </details>
 

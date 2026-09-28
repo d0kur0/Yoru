@@ -49,9 +49,16 @@ const rows = [
 const started = Date.now() - 1047000;
 let down = 106 * 1024 ** 2;
 let up = 12 * 1024 ** 2;
+let statusPoll = 0;
+const demoTraffic = [3.2, 4.8, 3.6, 6.4, 5.1, 7.2, 4.3, 5.8, 3.9, 6.1];
 window.APP_API = {
   LoadConfig: async () => JSON.stringify(config),
-  Status: async () => JSON.stringify({ installed: true, bundled: true, running: true, version: 'v1.19.30', revision: 1, started, activeServer: 'ams', downloadTotal: down += 124000, uploadTotal: up += 7000, connections: rows.map(([app, host, action, down, up], i) => ({ id: String(i), app, host, action, down, up, type: 'tcp', processPath: '', ip: '', rule: 'DomainSuffix' })) }),
+  Status: async () => {
+    const traffic = demoTraffic[statusPoll++ % demoTraffic.length];
+    down += traffic * 1024 ** 2;
+    up += traffic * 0.18 * 1024 ** 2;
+    return JSON.stringify({ installed: true, bundled: true, running: true, version: 'v1.19.30', revision: 1, started, activeServer: 'ams', downloadTotal: down, uploadTotal: up, connections: rows.map(([app, host, action, down, up], i) => ({ id: String(i), app, host, action, down, up, type: 'tcp', processPath: '', ip: '', rule: 'DomainSuffix' })) });
+  },
   TestServerLatency: async id => ({ ams: 42, fra: 58, hel: 67 })[id],
   TestRunningServerLatency: async () => 42,
   LogsLocation: async () => 'C:\\Users\\User\\AppData\\Roaming\\Yoru\\logs',
