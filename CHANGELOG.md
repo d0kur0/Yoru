@@ -1,3 +1,16 @@
+## [1.4.1](https://github.com/d0kur0/Yoru/compare/v1.4.0...v1.4.1) (2026-09-28)
+
+### Bug Fixes
+
+* allow DNS servers pinned to network interfaces ([158fe12](https://github.com/d0kur0/Yoru/commit/158fe127f92de19baf6acac8c690d50d1c3c66a0))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.4.0](https://github.com/d0kur0/Yoru/compare/v1.3.2...v1.4.0) (2026-09-27)
 
 ### Features
