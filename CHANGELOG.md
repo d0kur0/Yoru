@@ -1,3 +1,16 @@
+## [1.4.2](https://github.com/d0kur0/Yoru/compare/v1.4.1...v1.4.2) (2026-10-02)
+
+### Bug Fixes
+
+* request macOS TUN privileges for the networking core ([73e13b4](https://github.com/d0kur0/Yoru/commit/73e13b46d58bf3e2e089e4adde5bf46936545a53))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.4.1](https://github.com/d0kur0/Yoru/compare/v1.4.0...v1.4.1) (2026-09-28)
 
 ### Bug Fixes
