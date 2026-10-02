@@ -20,6 +20,13 @@ import (
 var assets embed.FS
 
 func main() {
+	if handled, err := core.HandlePrivilegedCore(os.Args[1:]); handled {
+		if err != nil {
+			log.Print(err)
+			os.Exit(1)
+		}
+		return
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal(err)

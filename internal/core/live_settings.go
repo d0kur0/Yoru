@@ -32,6 +32,11 @@ func (m *Manager) SaveLive(parent context.Context, c Config) error {
 	if err := c.Validate(); err != nil {
 		return err
 	}
+	if m.privilegedCore || m.needsPrivilegedCore(c) {
+		if err := validatePrivilegedConfig(c); err != nil {
+			return err
+		}
+	}
 	tunChanged := c.Settings.TUN != m.config.Settings.TUN
 	modeChanged := c.Settings.Mode != m.config.Settings.Mode
 	proxyChanged := c.Settings.SystemProxy != m.config.Settings.SystemProxy
@@ -46,6 +51,11 @@ func (m *Manager) SaveLive(parent context.Context, c Config) error {
 	}
 	if m.process == nil || (!tunChanged && !modeChanged && !proxyChanged) {
 		return m.save(c)
+	}
+	if tunChanged && m.needsPrivilegedCore(c) && !m.privilegedCore {
+		authorizeCtx, authorizeCancel := m.operation(parent, 2*time.Minute)
+		defer authorizeCancel()
+		return m.restartPrivilegedCore(authorizeCtx, c)
 	}
 	var applied Config
 	if err := json.Unmarshal(m.applied, &applied); err != nil {

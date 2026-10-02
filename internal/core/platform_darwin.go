@@ -19,10 +19,8 @@ type desktopPlatform struct{ dir string }
 
 func newPlatform(dir string) Platform { return &desktopPlatform{dir} }
 
-// IsElevated always reports true here: macOS doesn't participate in the
-// Windows admin-elevation flow (see elevate_windows.go), so this just keeps
-// Status().NeedsElevation from spuriously showing an admin-rights prompt.
-func (p *desktopPlatform) IsElevated() bool { return true }
+// The GUI stays unprivileged; the desktop runner elevates only the core.
+func (p *desktopPlatform) IsElevated() bool { return os.Geteuid() == 0 }
 
 // tun is unused on macOS: TUN doesn't change how autostart is registered here.
 func (p *desktopPlatform) Autostart(enabled, minimized, tun bool) error {

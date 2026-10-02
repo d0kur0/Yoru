@@ -26,6 +26,11 @@ func (m *Manager) ReloadConfig(parent context.Context) error {
 
 // Called under m.mu. Keep the exact TUN configuration until an explicit restart.
 func (m *Manager) reloadConfig(ctx context.Context, c Config) error {
+	if m.privilegedCore {
+		if err := validatePrivilegedConfig(c); err != nil {
+			return err
+		}
+	}
 	var before liveSettings
 	if err := m.api(ctx, http.MethodGet, "/configs", nil, &before); err != nil {
 		return err

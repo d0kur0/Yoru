@@ -31,6 +31,7 @@ type Manager struct {
 	downloadClient   *http.Client
 	releaseURL       string
 	process          Process
+	privilegedCore   bool
 	done             chan struct{}
 	endpoint, secret string
 	started          time.Time
@@ -77,7 +78,7 @@ type Connection struct {
 }
 
 func New(dir string) (*Manager, error) {
-	m := &Manager{dir: dir, config: DefaultConfig(), runner: commandRunner{}, client: &http.Client{Timeout: 3 * time.Second, Transport: &http.Transport{Proxy: nil}}, downloadClient: &http.Client{Timeout: 4 * time.Minute}, releaseURL: "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest", platform: newPlatform(dir), log: &rotatingLog{dir: filepath.Join(dir, "logs"), settings: *DefaultLogs()}}
+	m := &Manager{dir: dir, config: DefaultConfig(), runner: NewDesktopRunner(), client: &http.Client{Timeout: 3 * time.Second, Transport: &http.Transport{Proxy: nil}}, downloadClient: &http.Client{Timeout: 4 * time.Minute}, releaseURL: "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest", platform: newPlatform(dir), log: &rotatingLog{dir: filepath.Join(dir, "logs"), settings: *DefaultLogs()}}
 	m.lifetime, m.cancel = context.WithCancel(context.Background())
 	m.downloadClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) >= 8 {
@@ -152,10 +153,19 @@ func freePort() (int, error) {
 	return p, e
 }
 func (m *Manager) Start(ctx context.Context) (err error) {
-	ctx, cancelAll := m.operation(ctx, 45*time.Second)
-	defer cancelAll()
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	timeout := 45 * time.Second
+	if m.needsPrivilegedCore(m.config) {
+		timeout = 2 * time.Minute
+	}
+	ctx, cancelAll := m.operation(ctx, timeout)
+	defer cancelAll()
+	return m.startLocked(ctx)
+}
+
+// Called under m.mu, including when a live TUN toggle requires authorization.
+func (m *Manager) startLocked(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			m.lastError = err.Error()
@@ -214,11 +224,18 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 		return e
 	}
 	m.log.Reset()
-	p, e := m.runner.Start(i.Path, []string{"-d", runDir, "-f", configPath}, m.log)
+	var p Process
+	privileged := m.needsPrivilegedCore(m.config)
+	if privileged {
+		p, e = m.runner.(PrivilegedRunner).StartPrivileged(ctx, i, m.config, address, m.secret, port, m.log)
+	} else {
+		p, e = m.runner.Start(i.Path, []string{"-d", runDir, "-f", configPath}, m.log)
+	}
 	if e != nil {
 		return fmt.Errorf("Не удалось запустить Mihomo: %w", e)
 	}
 	m.process = p
+	m.privilegedCore = privileged
 	m.done = make(chan struct{})
 	m.endpoint = "http://" + address
 	m.lastError = ""
@@ -232,10 +249,11 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 			return
 		}
 		m.process = nil
+		m.privilegedCore = false
 		m.endpoint = ""
 		m.started = time.Time{}
 		if err != nil {
-			m.lastError = "Процесс Mihomo завершился с ошибкой. Проверьте журнал и права TUN"
+			m.lastError = "Процесс Mihomo завершился с ошибкой. Проверьте журнал ядра"
 		}
 		if m.restoreProxy != nil {
 			if e := m.restoreProxy(); e != nil {
@@ -258,8 +276,9 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 		select {
 		case <-done:
 			m.process = nil
+			m.privilegedCore = false
 			m.endpoint = ""
-			return errors.New("Mihomo завершился при запуске. Для TUN нужны права администратора/root; подробности в журнале")
+			return errors.New("Mihomo завершился при запуске. Подробности в журнале ядра")
 		case <-readyCtx.Done():
 			_ = m.stop()
 			return errors.New("Ядро не ответило за 15 секунд; процесс остановлен")
@@ -310,6 +329,7 @@ func (m *Manager) stop() error {
 		select {
 		case <-done:
 			m.process = nil
+			m.privilegedCore = false
 			m.endpoint = ""
 			m.started = time.Time{}
 		case <-time.After(5 * time.Second):
@@ -371,8 +391,9 @@ func (m *Manager) Status(ctx context.Context) Status {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s := Status{Bundled: HasBundledCore(), Error: m.lastError, Connections: []Connection{}, Revision: m.config.Revision}
-	s.Elevated = m.platform.IsElevated()
-	s.NeedsElevation = m.config.Settings.TUN && !s.Elevated
+	s.Elevated = m.platform.IsElevated() || m.privilegedCore
+	_, canAuthorize := m.runner.(PrivilegedRunner)
+	s.NeedsElevation = m.config.Settings.TUN && !s.Elevated && !canAuthorize
 	if i, e := m.installed(false); e == nil {
 		s.Installed = true
 		s.Version = i.Version

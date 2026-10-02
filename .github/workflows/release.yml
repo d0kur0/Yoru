@@ -104,6 +104,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/package.mjs ${{ matrix.os }} ${{ matrix.arch }}
+      - name: Verify packaged macOS privileged helper
+        if: runner.os == 'macOS'
+        run: YORU_MAC_HELPER_APP="$PWD/bin/Yoru.app/Contents/MacOS/Yoru" go test ./internal/core -run TestPackagedMacPrivilegedHelperDispatch -count=1
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: pwsh
