@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
 func serverFromOptions(p map[string]any) (Server, error) {
-	data, e := yaml.Marshal(map[string]any{"proxies": []any{p}})
+	data, e := marshalMihomoYAML(map[string]any{"proxies": []any{p}})
 	if e != nil {
 		return Server{}, e
 	}

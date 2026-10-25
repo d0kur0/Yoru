@@ -10,8 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
 type Server struct {
@@ -562,7 +560,7 @@ func (c Config) YAML(controller, secret string, mixedPort int) ([]byte, error) {
 	if c.TUNOptions.Interface != "" {
 		document["interface-name"] = c.TUNOptions.Interface
 	}
-	return yaml.Marshal(document)
+	return marshalMihomoYAML(document)
 }
 
 func (c Config) LatencyTestURL() string {

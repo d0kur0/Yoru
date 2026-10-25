@@ -72,7 +72,7 @@ func (m *Manager) reloadConfig(ctx context.Context, c Config) error {
 		}
 	}
 	apply := func(ctx context.Context, doc map[string]any) error {
-		payload, err := yaml.Marshal(doc)
+		payload, err := marshalMihomoYAML(doc)
 		if err != nil {
 			return err
 		}

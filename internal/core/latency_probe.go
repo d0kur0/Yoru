@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 func probeDelay(ctx context.Context, client *http.Client, endpoint, secret, id string, timeout int, target string) (int, error) {
@@ -53,7 +51,7 @@ func (m *Manager) probeSavedServer(parent context.Context, binary string, proxy 
 	}
 	secret := hex.EncodeToString(token)
 	address := fmt.Sprintf("127.0.0.1:%d", port)
-	data, err := yaml.Marshal(map[string]any{
+	data, err := marshalMihomoYAML(map[string]any{
 		"external-controller": address, "secret": secret,
 		"mixed-port": 0, "allow-lan": false, "ipv6": ipv6,
 		"tun":       map[string]any{"enable": false},
