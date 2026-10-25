@@ -1,3 +1,16 @@
+## [1.5.1](https://github.com/d0kur0/Yoru/compare/v1.5.0...v1.5.1) (2026-10-25)
+
+### Bug Fixes
+
+* preserve integer XHTTP options after saving configuration ([02ff452](https://github.com/d0kur0/Yoru/commit/02ff452a0db4f2185e97e5ebc72733f012521cc7))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.5.0](https://github.com/d0kur0/Yoru/compare/v1.4.2...v1.5.0) (2026-10-25)
 
 ### Features
