@@ -101,6 +101,7 @@ type Settings struct {
 	RouteExclusions []string `json:"routeExclusions"`
 }
 type Config struct {
+	ConfigSyncURL string         `json:"configSyncURL,omitempty"`
 	Sets          []RouteSet     `json:"sets"`
 	RouteOrder    []RouteRef     `json:"routeOrder"`
 	Logging       *LogSettings   `json:"logging"`
@@ -256,6 +257,9 @@ func resolver(s string) bool {
 	return u.Scheme == "https" || u.Scheme == "tls" || u.Scheme == "quic" || u.Scheme == "udp" || u.Scheme == "tcp"
 }
 func (c Config) Validate() error {
+	if c.ConfigSyncURL != "" && validateConfigURL(c.ConfigSyncURL) != nil {
+		return errors.New("Некорректный HTTPS URL синхронизации")
+	}
 	if err := c.validateProxyGroups(); err != nil {
 		return err
 	}

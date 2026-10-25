@@ -139,6 +139,10 @@ export function Stop(): $CancellablePromise<void> {
     return $Call.ByID(3588462264);
 }
 
+export function SyncConfigURL(source: string, revision: number): $CancellablePromise<string> {
+    return $Call.ByID(2695693242, source, revision);
+}
+
 export function TestLatency(): $CancellablePromise<string> {
     return $Call.ByID(1407565166);
 }

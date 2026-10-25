@@ -18,6 +18,13 @@ type VPN struct {
 
 func encoded(v any) (string, error)        { b, e := json.Marshal(v); return string(b), e }
 func (v *VPN) LoadConfig() (string, error) { return encoded(v.manager.Config()) }
+func (v *VPN) SyncConfigURL(ctx context.Context, source string, revision uint64) (string, error) {
+	c, err := v.manager.SyncConfigURL(ctx, source, revision)
+	if err != nil {
+		return "", err
+	}
+	return encoded(c)
+}
 func (v *VPN) SaveConfig(ctx context.Context, data string) (string, error) {
 	c, e := core.DecodeConfig([]byte(data))
 	if e != nil {

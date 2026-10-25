@@ -65,6 +65,7 @@ window.APP_API = {
   OpenLogsFolder: async () => { throw new Error('Папка доступна в установленном приложении'); },
   ProcessIcon: async () => '',
   SaveConfig: async () => { throw new Error('Демонстрационный режим: настройки не сохраняются'); },
+  SyncConfigURL: async () => { throw new Error('Демонстрационный режим: конфигурация не заменяется'); },
 };
 const status = document.createElement('div');
 status.id = 'operation-status'; status.hidden = true; document.body.append(status);

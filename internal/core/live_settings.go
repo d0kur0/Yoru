@@ -25,6 +25,11 @@ func (m *Manager) SaveLive(parent context.Context, c Config) error {
 	defer cancel()
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	return m.saveLive(parent, ctx, c)
+}
+
+// Called under m.mu, including full configuration URL replacement.
+func (m *Manager) saveLive(parent, ctx context.Context, c Config) error {
 	c.normalize()
 	if c.Revision != m.config.Revision {
 		return errors.New("Настройки обновились в фоне. Повторите изменение")
