@@ -1,3 +1,16 @@
+## [1.5.2](https://github.com/d0kur0/Yoru/compare/v1.5.1...v1.5.2) (2026-10-28)
+
+### Bug Fixes
+
+* clear stale optional fields when replacing configuration ([b8ba891](https://github.com/d0kur0/Yoru/commit/b8ba891b288f547807f1cc99205b7c75f2039c15))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.5.1](https://github.com/d0kur0/Yoru/compare/v1.5.0...v1.5.1) (2026-10-25)
 
 ### Bug Fixes
