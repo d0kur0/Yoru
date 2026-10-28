@@ -65,6 +65,43 @@ func TestURLSyncClearsOmittedRuleFields(t *testing.T) {
 	}
 }
 
+func TestURLSyncDoesNotMoveProxyKeywordsIntoDirectSet(t *testing.T) {
+	m, _, _ := testManager(t)
+	before := m.Config()
+	before.Sets = []RouteSet{{ID: "ai", Name: "AI", Enabled: true, Action: "PROXY", Keywords: []string{"anthropic", "chatgpt"}}}
+	before.RouteOrder = nil
+	if err := m.Save(before); err != nil {
+		t.Fatal(err)
+	}
+	remote := remoteConfig()
+	remote.Sets = []RouteSet{{ID: "cisco", Name: "Cisco entry", Enabled: true, Action: "DIRECT", Domains: []string{"vpn.example.com"}}}
+	remote.RouteOrder = []RouteRef{{"rule", "remote-rule"}, {"set", "cisco"}}
+	// Reproduce the old merge mechanism independently of the fixed manager.
+	legacy := m.Config()
+	encoded, _ := json.Marshal(remote)
+	if err := json.Unmarshal(encoded, &legacy); err != nil {
+		t.Fatal(err)
+	}
+	if legacy.Sets[0].Action != "DIRECT" || len(legacy.Sets[0].Keywords) != 2 {
+		t.Fatal("legacy stale-keyword reproduction failed")
+	}
+	configResponse(t, m, remote)
+	got, err := m.SyncConfigURL(context.Background(), "https://config.example/profile", m.Config().Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got.Sets, remote.Sets) {
+		t.Fatal("DIRECT set inherited fields from previous PROXY set")
+	}
+	if err := m.Save(got); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := New(m.dir)
+	if err != nil || !reflect.DeepEqual(loaded.Config().Sets, remote.Sets) {
+		t.Fatal("stale keywords persisted", err)
+	}
+}
+
 func TestURLSyncReplacesFullConfigAndKeepsPrivateRestorableBackup(t *testing.T) {
 	m, _, _ := testManager(t)
 	before := m.Config()
