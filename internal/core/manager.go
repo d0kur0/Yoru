@@ -137,8 +137,11 @@ func (m *Manager) save(c Config) error {
 		}
 		return e
 	}
-	// Decode to detach all slices/maps from the caller.
-	_ = json.Unmarshal(b, &m.config)
+	// Decode into a fresh value: reusing slices/maps retains omitted fields
+	// from the previous configuration (for example noResolve on a new rule).
+	var detached Config
+	_ = json.Unmarshal(b, &detached)
+	m.config = detached
 	m.log.Configure(*m.config.Logging)
 	return nil
 }

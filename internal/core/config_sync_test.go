@@ -41,6 +41,30 @@ func configResponse(t *testing.T, m *Manager, c Config) {
 	})}
 }
 
+func TestURLSyncClearsOmittedRuleFields(t *testing.T) {
+	m, _, _ := testManager(t)
+	before := m.Config()
+	before.Rules = []Rule{{ID: "old-ip", Type: "IP-CIDR", Value: "192.0.2.0/24", Action: "DIRECT", NoResolve: true}}
+	before.RouteOrder = nil
+	if err := m.Save(before); err != nil {
+		t.Fatal(err)
+	}
+	configResponse(t, m, remoteConfig())
+	got, err := m.SyncConfigURL(context.Background(), "https://config.example/profile", m.Config().Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Rules[0].NoResolve {
+		t.Fatal("domain rule inherited noResolve from replaced IP rule")
+	}
+	if err := got.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.SyncConfigURL(context.Background(), got.ConfigSyncURL, got.Revision); err != nil {
+		t.Fatal("repeat sync failed", err)
+	}
+}
+
 func TestURLSyncReplacesFullConfigAndKeepsPrivateRestorableBackup(t *testing.T) {
 	m, _, _ := testManager(t)
 	before := m.Config()
