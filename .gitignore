@@ -39,3 +39,9 @@ internal/bundled/payload/*.json
 *.syso
 /node_modules/
 /release/
+
+# Machine-local AI Root binding and client access; never version real credentials.
+/.ai-root.local.json
+/.codex/config.toml
+/.cursor/mcp.json
+/.mcp.json

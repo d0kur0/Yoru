@@ -1,0 +1,6 @@
+---
+description: Общие правила проекта и AI Root
+alwaysApply: true
+---
+
+Прочитай `AGENTS.md` и локальную привязку `.ai-root.local.json`; используй указанные там правила, карту и память.
