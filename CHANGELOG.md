@@ -1,3 +1,16 @@
+## [1.5.3](https://github.com/d0kur0/Yoru/compare/v1.5.2...v1.5.3) (2026-11-14)
+
+### Bug Fixes
+
+* run core with high process priority ([ddbdb3f](https://github.com/d0kur0/Yoru/commit/ddbdb3fdfa647b8fcec9950bd6cfe937614e5b99))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.5.2](https://github.com/d0kur0/Yoru/compare/v1.5.1...v1.5.2) (2026-10-28)
 
 ### Bug Fixes
