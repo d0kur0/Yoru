@@ -10,6 +10,15 @@ import (
 
 func hideConsole(c *exec.Cmd)                  {}
 func protectChild(c *exec.Cmd) (func(), error) { return func() {}, nil }
+func raisePriority(*exec.Cmd)                  {}
+
+// Raising priority needs root (the macOS session helper); otherwise keep the default.
+func applyPriority(c *exec.Cmd) {
+	_ = syscall.Setpriority(syscall.PRIO_PROCESS, c.Process.Pid, corePriorityNice)
+}
+
+const corePriorityNice = -10
+
 func (p *commandProcess) Stop() error {
 	// Signal only our child; a delayed kill bounds shutdown if it ignores SIGTERM.
 	e := p.cmd.Process.Signal(syscall.SIGTERM)

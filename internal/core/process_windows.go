@@ -10,6 +10,15 @@ import (
 func hideConsole(c *exec.Cmd)         { c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} }
 func (p *commandProcess) Stop() error { return p.cmd.Process.Kill() }
 
+// The core carries TUN traffic, so it must not starve behind CPU-heavy user work.
+func raisePriority(c *exec.Cmd) {
+	if c.SysProcAttr == nil {
+		c.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	c.SysProcAttr.CreationFlags |= windows.HIGH_PRIORITY_CLASS
+}
+func applyPriority(*exec.Cmd) {}
+
 // Closing the application's job handle also kills its core after an app crash.
 func protectChild(c *exec.Cmd) (func(), error) {
 	job, e := windows.CreateJobObject(nil, nil)

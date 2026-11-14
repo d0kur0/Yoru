@@ -28,11 +28,13 @@ func (commandRunner) Validate(ctx context.Context, path string, args []string) e
 func (commandRunner) Start(path string, args []string, output io.Writer) (Process, error) {
 	c := exec.Command(path, args...)
 	hideConsole(c)
+	raisePriority(c)
 	c.Stdout = output
 	c.Stderr = output
 	if e := c.Start(); e != nil {
 		return nil, e
 	}
+	applyPriority(c)
 	release, e := protectChild(c)
 	if e != nil {
 		_ = c.Process.Kill()
