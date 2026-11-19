@@ -91,6 +91,13 @@ export function LogsLocation(): $CancellablePromise<string> {
     return $Call.ByID(832583476);
 }
 
+/**
+ * MeasureServers checks the given servers concurrently in one call.
+ */
+export function MeasureServers(ids: string[] | null): $CancellablePromise<string> {
+    return $Call.ByID(1659252184, ids);
+}
+
 export function OpenExternalURL(address: string): $CancellablePromise<void> {
     return $Call.ByID(1286088376, address);
 }
@@ -125,6 +132,13 @@ export function ReloadConfig(): $CancellablePromise<void> {
 
 export function SaveConfig(data: string): $CancellablePromise<string> {
     return $Call.ByID(2018231407, data);
+}
+
+/**
+ * ServerLatencies returns the core's own health-check results without probing.
+ */
+export function ServerLatencies(): $CancellablePromise<string> {
+    return $Call.ByID(4123465859);
 }
 
 export function Start(): $CancellablePromise<void> {

@@ -256,6 +256,8 @@ func (r *fakeRunner) Start(_ string, args []string, _ io.Writer) (Process, error
 			_, _ = io.WriteString(w, `{"version":"test"}`)
 		case req.URL.Path == "/connections":
 			_, _ = io.WriteString(w, `{"downloadTotal":2048,"uploadTotal":256,"connections":[{"id":"c","metadata":{"process":"browser","processPath":"/usr/bin/browser","host":"example.org","destinationIP":"192.0.2.1","network":"tcp"},"rule":"DOMAIN","chains":["server-a","PROXY"],"download":1024,"upload":128}]}`)
+		case req.URL.Path == "/proxies":
+			_, _ = io.WriteString(w, `{"proxies":{"server-a":{"history":[{"time":"2026-11-19T20:00:00Z","delay":7}],"extra":{"https://www.gstatic.com/generate_204":{"history":[{"time":"2026-11-19T20:00:00Z","delay":0},{"time":"2026-11-19T20:00:30Z","delay":37}]},"https://other.example":{"history":[{"time":"2026-11-19T20:00:40Z","delay":99}]}}},"server-gone":{"extra":{"https://www.gstatic.com/generate_204":{"history":[{"time":"2026-11-19T20:00:30Z","delay":5}]}}}}}`)
 		case strings.HasSuffix(req.URL.Path, "/delay"):
 			_, _ = io.WriteString(w, `{"delay":42}`)
 		default:

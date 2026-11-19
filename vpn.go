@@ -123,6 +123,24 @@ func (v *VPN) TestRunningServerLatency(ctx context.Context, id string) (int, err
 	return v.manager.TestRunningServerLatency(ctx, id)
 }
 
+// ServerLatencies returns the core's own health-check results without probing.
+func (v *VPN) ServerLatencies(ctx context.Context) (string, error) {
+	samples, err := v.manager.ServerLatencies(ctx)
+	if err != nil {
+		return "", err
+	}
+	return encoded(samples)
+}
+
+// MeasureServers checks the given servers concurrently in one call.
+func (v *VPN) MeasureServers(ctx context.Context, ids []string) (string, error) {
+	delays, err := v.manager.MeasureServers(ctx, ids)
+	if err != nil {
+		return "", err
+	}
+	return encoded(delays)
+}
+
 // ImportRouteSets only reads the file; the UI previews it before SaveConfig.
 func (v *VPN) ImportRouteSets() (string, error) {
 	path, err := v.app.Dialog.OpenFile().SetTitle("Импорт наборов маршрутизации").AddFilter("Наборы Yoru (JSON)", "*.json").AttachToWindow(v.window).PromptForSingleSelection()

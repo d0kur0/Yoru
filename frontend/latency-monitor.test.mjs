@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createLatencyMonitor} from './src/reference/latency-monitor.js';
+import {createLatencyMonitor, CACHED_FRESH} from './src/reference/latency-monitor.js';
 
 test('connect probes immediately, refreshes every minute and stops offline', async () => {
  let time=100, calls=0;
@@ -28,5 +28,12 @@ test('failed probes show timeout and retry on the next interval',async()=>{
  let time=1;
  const m=createLatencyMonitor(async()=>{throw Error('offline');},()=>time);
  await m.tick(true,1,'a'); assert.equal(m.value,-1);
- time+=60000; await m.tick(true,1,'a'); assert.equal(m.value,-1);
+ time+=30000; await m.tick(true,1,'a'); assert.equal(m.value,-1);
+});
+
+test('fresh core history replaces the probe', async()=>{
+ let time=200000, calls=0, sample={value:33,time:150000};
+ const m=createLatencyMonitor(async()=>{calls++;return 50;},()=>time,()=>sample);
+ await m.tick(true,1,'a'); assert.equal(m.value,33); assert.equal(calls,0);
+ time+=CACHED_FRESH; await m.tick(true,1,'a'); assert.equal(calls,1); assert.equal(m.value,50);
 });
