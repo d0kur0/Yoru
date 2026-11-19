@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -55,7 +56,11 @@ func (m *Manager) saveLive(parent, ctx context.Context, c Config) error {
 		return m.reloadConfig(ctx, c)
 	}
 	if m.process == nil || (!tunChanged && !modeChanged && !proxyChanged) {
-		return m.save(c)
+		if err := m.save(c); err != nil {
+			return err
+		}
+		m.markAppliedIfSameRuntime()
+		return nil
 	}
 	if tunChanged && m.needsPrivilegedCore(c) && !m.privilegedCore {
 		authorizeCtx, authorizeCancel := m.operation(parent, 2*time.Minute)
@@ -192,4 +197,21 @@ func (m *Manager) setLiveProxy(enabled bool, port int) error {
 	}
 	m.restoreProxy = nil
 	return nil
+}
+
+// Called under m.mu. Saving names, intervals or other UI-only fields does not
+// change the running core, so it must not report pending changes.
+func (m *Manager) markAppliedIfSameRuntime() {
+	if m.process == nil || m.pendingTUN {
+		return
+	}
+	var applied Config
+	if json.Unmarshal(m.applied, &applied) != nil {
+		return
+	}
+	before, errBefore := applied.YAML("127.0.0.1:0", "pending-check", 0)
+	after, errAfter := m.config.YAML("127.0.0.1:0", "pending-check", 0)
+	if errBefore == nil && errAfter == nil && bytes.Equal(before, after) {
+		m.applied = runtimeSnapshot(m.config)
+	}
 }
