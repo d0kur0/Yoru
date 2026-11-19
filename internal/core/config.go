@@ -121,10 +121,15 @@ func DefaultConfig() Config {
 	c.normalize()
 	return c
 }
+
+// Large subscriptions produce multi-megabyte configs; the limit only guards
+// against runaway input, it must stay above anything Yoru writes itself.
+const maxConfigSize = 32 << 20
+
 func DecodeConfig(data []byte) (Config, error) {
 	var c Config
-	if len(data) > 2<<20 {
-		return c, errors.New("Конфигурация больше 2 МБ")
+	if len(data) > maxConfigSize {
+		return c, errors.New("Конфигурация больше 32 МБ")
 	}
 	if err := json.Unmarshal(data, &c); err != nil {
 		return c, errors.New("Некорректный JSON конфигурации")

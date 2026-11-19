@@ -25,7 +25,7 @@ func ReadBackup(path string) (Config, error) {
 		return Config{}, e
 	}
 	defer f.Close()
-	b, e := readLimit(f, 2<<20)
+	b, e := readLimit(f, maxConfigSize)
 	if e != nil {
 		return Config{}, e
 	}

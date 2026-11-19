@@ -89,11 +89,17 @@ func New(dir string) (*Manager, error) {
 		}
 		return nil
 	}
-	data, e := os.ReadFile(filepath.Join(dir, "config.json"))
+	path := filepath.Join(dir, "config.json")
+	data, e := os.ReadFile(path)
 	if e == nil {
-		m.config, e = DecodeConfig(data)
-		if e != nil {
-			return nil, e
+		if m.config, e = DecodeConfig(data); e != nil {
+			// Keep the window usable: an unreadable config must not stop startup.
+			aside := filepath.Join(dir, "config.invalid-"+time.Now().Format("20060102-150405")+".json")
+			if err := os.Rename(path, aside); err != nil {
+				return nil, errors.Join(e, err)
+			}
+			m.config = DefaultConfig()
+			m.lastError = "Сохранённые настройки не прочитаны (" + e.Error() + "). Файл перенесён в " + filepath.Base(aside) + "; восстановите настройки через импорт"
 		}
 	} else if !errors.Is(e, os.ErrNotExist) {
 		return nil, e
