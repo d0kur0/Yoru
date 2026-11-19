@@ -1,3 +1,20 @@
+## [1.5.4](https://github.com/d0kur0/Yoru/compare/v1.5.3...v1.5.4) (2026-11-19)
+
+### Bug Fixes
+
+* **core:** start with large or unreadable configuration ([f5df7e5](https://github.com/d0kur0/Yoru/commit/f5df7e5679b7c2a61b866a2650a7c599b6da2188))
+* **core:** stop reporting pending changes for UI-only edits ([4d49544](https://github.com/d0kur0/Yoru/commit/4d49544c8e5f5363401d8b91e6ed100356954b6c))
+* **latency:** reuse core health checks and measure servers in one batch ([ec70570](https://github.com/d0kur0/Yoru/commit/ec70570696227e5f4494f6dbf4ddc8d03dbdb7de))
+* **proxy:** drop the recovery record when another app owns the proxy ([a34dfae](https://github.com/d0kur0/Yoru/commit/a34dfae3ca41d7db1817f305c2f6b04a774f27ff))
+* **ui:** keep dialogs open on drag release and escape dialog titles ([ed82d46](https://github.com/d0kur0/Yoru/commit/ed82d4646c54d463a5bdfe70b7618ed17b329720))
+
+
+### Installers
+
+Windows x64: `-setup.exe`. macOS: choose `arm64` for Apple Silicon or `x64` for Intel, open the DMG and drag Yoru to Applications.
+
+These builds are unsigned (macOS uses an ad-hoc signature), without Apple notarization. The operating system may require approval to launch them. SHA-256 checksums are attached.
+
 ## [1.5.3](https://github.com/d0kur0/Yoru/compare/v1.5.2...v1.5.3) (2026-11-14)
 
 ### Bug Fixes

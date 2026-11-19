@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Yoru"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.5.3"
+    !define INFO_PRODUCTVERSION "1.5.4"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "© 2026, d0kur0"
