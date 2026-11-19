@@ -172,7 +172,7 @@ func (p *desktopPlatform) RecoverProxy() error {
 	if e = json.Unmarshal(b, &s); e != nil {
 		return e
 	}
-	var result error
+	var result, foreign error
 	for _, old := range s.Items {
 		cur, e := readProxy(old.Service, old.Kind)
 		if e != nil {
@@ -182,14 +182,18 @@ func (p *desktopPlatform) RecoverProxy() error {
 		if cur.Server == old.Server && cur.Port == old.Port && cur.Enabled == old.Enabled {
 			continue
 		}
+		// Another application owns this service now: nothing of Yoru's is left to undo.
 		if cur.Server != "127.0.0.1" || cur.Port != s.Port {
-			result = errors.Join(result, fmt.Errorf("Прокси %s изменён другим приложением", old.Service))
+			foreign = errors.Join(foreign, fmt.Errorf("Прокси %s изменён другим приложением и не тронут", old.Service))
 			continue
 		}
 		result = errors.Join(result, setProxy(old))
 	}
 	if result != nil {
-		return result
+		return errors.Join(result, foreign)
 	}
-	return os.Remove(file)
+	if e = os.Remove(file); e != nil {
+		return e
+	}
+	return foreign
 }

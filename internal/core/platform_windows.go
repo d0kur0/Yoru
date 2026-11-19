@@ -173,12 +173,15 @@ func (p *desktopPlatform) RecoverProxy() error {
 	}
 	defer k.Close()
 	current, _, _ := k.GetStringValue("ProxyServer")
+	// Another application owns the proxy now: nothing of Yoru's is left to undo.
 	if current != s.Owned && current != s.Server {
-		return errors.New("Прокси изменён другим приложением. Автоматическое восстановление отменено")
+		_ = os.Remove(file)
+		return errors.New("Прокси изменён другим приложением. Его настройки не тронуты, запись восстановления Yoru удалена")
 	}
 	currentOverride, _, _ := k.GetStringValue("ProxyOverride")
 	if currentOverride != s.Override && currentOverride != "localhost;127.*;[::1];<local>" {
-		return errors.New("Исключения прокси изменены другим приложением")
+		_ = os.Remove(file)
+		return errors.New("Исключения прокси изменены другим приложением. Его настройки не тронуты, запись восстановления Yoru удалена")
 	}
 	set := func(name, value string, exists bool) error {
 		if exists {
